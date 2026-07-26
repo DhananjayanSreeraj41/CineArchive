@@ -1,35 +1,55 @@
 /* ==========================================================================
-   MYBOX DESIGN SYSTEM & STYLESHEET
+   CINEARCHIVE DESIGN SYSTEM (APERTURE CINEMA THEME)
    ========================================================================== */
 
-/* Color Tokens & Variables (Gruvbox Dark Theme) */
+/* Color Tokens & Variables (Aperture Theme) */
 :root {
-    --bg-color: #1d2021;
-    --panel-color: #282828;
-    --panel-hover: #32302f;
-    --border-color: #3c3836;
-    --text-color: #a89984;
-    --text-white: #fbf1c7;
-    --text-highlight: #ebdbb2;
+    --bg-color: #0b0b0b;
+    --panel-color: #131313;
+    --panel-hover: #191919;
+    --border-color: #262523;
+    --text-color: #a39c8f;
+    --text-white: #f2ede4;
+    --text-highlight: #e7d9bd;
     
     /* Branding Accent Colors */
-    --color-orange: #fe8019;
-    --color-green: #b8bb26;
-    --color-blue: #83a598;
-    --danger-color: #fb4934;
-    --star-color: #fabd2f;
+    --color-orange: #9c3232;       /* Aperture red bright */
+    --color-green: #b6a988;        /* Aperture cream dim */
+    --color-blue: #e7d9bd;         /* Aperture cream */
+    --danger-color: #9c3232;       /* Aperture red bright */
+    --star-color: #e7d9bd;         /* Aperture cream */
+    --color-red-muted: #7c2626;    /* Aperture red */
     
     /* Layout & Shadow */
-    --input-bg: #3c3836;
-    --input-focus: #504945;
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
-    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
-    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.7);
-    --transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    --input-bg: #191919;
+    --input-focus: #262523;
+    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.6);
+    --shadow-md: 0 12px 36px rgba(0, 0, 0, 0.8);
+    --shadow-lg: 0 24px 72px rgba(0, 0, 0, 0.9);
+    --transition: all 0.4s cubic-bezier(.22,.61,.36,1);
     
     /* Typography */
     --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-    --font-title: 'Outfit', sans-serif;
+    --font-title: 'Cormorant Garamond', serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+}
+
+/* Ambient Film Grain Overlay */
+#grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0.035;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Elegant Typography em highlights */
+h1 em, h2 em, h3 em {
+    font-style: italic;
+    color: var(--text-highlight);
+    font-weight: 400;
 }
 
 /* Reset and Base Styles */
@@ -120,50 +140,30 @@ button {
 .logo-btn {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     font-family: var(--font-title);
     font-size: 26px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
     color: var(--text-white);
 }
 
-.logo-icon {
+.logo-btn em {
+    font-style: italic;
+    color: var(--text-highlight);
+}
+
+.logo-icon-aperture {
     display: flex;
-    position: relative;
-    width: 44px;
-    height: 24px;
     align-items: center;
 }
 
-.circle {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
+.mark-dot {
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
-    position: absolute;
-    mix-blend-mode: screen;
-}
-
-.circle-orange {
     background-color: var(--color-orange);
-    left: 0;
-}
-
-.circle-green {
-    background-color: var(--color-green);
-    left: 12px;
-    z-index: 2;
-}
-
-.circle-blue {
-    background-color: var(--color-blue);
-    left: 24px;
-    z-index: 1;
-}
-
-.logo-text span {
-    color: var(--color-orange);
+    display: inline-block;
 }
 
 /* Header Navigation Links */
@@ -1852,4 +1852,773 @@ button {
         text-align: center;
         padding: 10px;
     }
+}
+
+/* ==========================================================================
+   ADVANCED FILTERS & BADGES STYLES
+   ========================================================================== */
+.advanced-filters-container {
+    background-color: var(--panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.filter-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.filter-row .filter-group {
+    flex: 1;
+    min-width: 140px;
+}
+
+.badge {
+    background-color: var(--color-orange);
+    color: var(--text-white);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 6px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+#profile-notify-badge {
+    background-color: var(--danger-color);
+}
+
+/* ==========================================================================
+   ADMIN DATABASE DASHBOARD STYLES
+   ========================================================================== */
+.admin-dashboard-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-bottom: 40px;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.role-selector-container {
+    background-color: var(--panel-color);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.role-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-blue);
+}
+
+#db-role-selector {
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-white);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.db-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.db-stat-card {
+    background-color: var(--panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+}
+
+.db-stat-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--color-blue);
+}
+
+.db-stat-icon {
+    font-size: 32px;
+    color: var(--color-blue);
+}
+
+.db-stat-num {
+    display: block;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-white);
+    font-family: var(--font-title);
+    line-height: 1.2;
+}
+
+.db-stat-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--text-color);
+    letter-spacing: 0.5px;
+}
+
+.admin-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 24px;
+}
+
+@media (max-width: 768px) {
+    .admin-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.admin-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.admin-menu-btn {
+    background-color: var(--panel-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: var(--transition);
+}
+
+.admin-menu-btn:hover {
+    color: var(--text-white);
+    background-color: var(--panel-hover);
+    border-color: var(--input-focus);
+}
+
+.admin-menu-btn.active {
+    color: var(--text-white);
+    background-color: var(--border-color);
+    border-color: var(--color-orange);
+}
+
+.admin-panel-content {
+    background-color: var(--panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 24px;
+    min-height: 480px;
+    box-shadow: var(--shadow-sm);
+}
+
+.admin-panel-section h3 {
+    font-family: var(--font-title);
+    font-size: 20px;
+    color: var(--text-white);
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.panel-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+}
+
+.panel-section-header h3 {
+    margin-bottom: 0;
+}
+
+.table-selector-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+#db-table-select {
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-white);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.table-info-meta {
+    font-size: 13px;
+    color: var(--text-color);
+    margin-bottom: 16px;
+    font-style: italic;
+}
+
+.db-table-view-wrapper {
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: rgba(20, 24, 28, 0.2);
+}
+
+.db-data-table {
+    font-size: 13px;
+}
+
+.db-data-table td {
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.db-data-table tr.record-row:hover td {
+    background-color: var(--panel-hover) !important;
+}
+
+.db-pk-val {
+    font-family: monospace;
+    font-weight: 700;
+    color: var(--color-orange);
+}
+
+.db-fk-val {
+    font-family: monospace;
+    color: var(--color-blue);
+    cursor: pointer;
+}
+
+.db-fk-val:hover {
+    text-decoration: underline;
+}
+
+.db-action-cell {
+    display: flex;
+    gap: 8px;
+}
+
+.db-row-edit-btn {
+    background: transparent;
+    color: var(--color-blue);
+    font-size: 13px;
+}
+
+.db-row-edit-btn:hover {
+    color: var(--text-white);
+}
+
+.db-row-delete-btn {
+    background: transparent;
+    color: var(--danger-color);
+    font-size: 13px;
+}
+
+.db-row-delete-btn:hover {
+    color: var(--text-white);
+}
+
+/* SQL Query Engine styles */
+.sql-template-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+}
+
+#sql-templates {
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-white);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    max-width: 320px;
+}
+
+.sql-editor-container {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+#sql-query-input {
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    color: var(--text-white);
+    font-family: monospace;
+    font-size: 14px;
+    padding: 12px;
+    border-radius: 6px;
+    resize: vertical;
+    margin-bottom: 12px;
+    outline: none;
+}
+
+#sql-query-input:focus {
+    border-color: var(--color-blue);
+}
+
+.sql-action-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.sql-status {
+    font-size: 12px;
+    color: var(--color-green);
+    font-family: monospace;
+}
+
+.sql-status.error {
+    color: var(--danger-color);
+}
+
+.query-plan-box {
+    background-color: var(--bg-color);
+    border-left: 4px solid var(--star-color);
+    border-radius: 0 6px 6px 0;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--text-highlight);
+    margin-bottom: 16px;
+}
+
+.query-plan-box p {
+    font-family: monospace;
+    margin-top: 4px;
+}
+
+/* Stored Procedures & Views */
+.procedures-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.proc-card {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.proc-card h4 {
+    font-family: monospace;
+    font-size: 16px;
+    color: var(--color-orange);
+}
+
+.proc-card p {
+    font-size: 13px;
+    color: var(--text-color);
+}
+
+.proc-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.proc-input-group label {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.proc-input-group select {
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-white);
+    padding: 6px;
+    border-radius: 4px;
+}
+
+.proc-output-container {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.proc-output-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+}
+
+#proc-output-pre {
+    font-family: monospace;
+    font-size: 13px;
+    color: var(--color-green);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 16px;
+    border-radius: 6px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* DB Event Console Log */
+.terminal-box {
+    background-color: #111;
+    border: 1px solid #333;
+    border-radius: 8px;
+    height: 350px;
+    overflow-y: auto;
+    padding: 16px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    color: #00ff00;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+}
+
+.terminal-line {
+    margin-bottom: 6px;
+    line-height: 1.4;
+}
+
+.terminal-line.info { color: #a89984; }
+.terminal-line.trigger { color: #fe8019; font-weight: bold; }
+.terminal-line.transaction { color: #b8bb26; }
+.terminal-line.error { color: #fb4934; }
+.terminal-line.query { color: #83a598; }
+
+/* ==========================================================================
+   CONNECTIONS & NOTIFICATIONS SECTION STYLES
+   ========================================================================== */
+.connections-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+@media (max-width: 768px) {
+    .connections-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.connection-column {
+    background-color: var(--panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.connection-column h3 {
+    font-family: var(--font-title);
+    font-size: 16px;
+    color: var(--text-white);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-bottom: 16px;
+}
+
+.connection-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.connection-user-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+
+.connection-user-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.connection-user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--color-blue);
+    color: var(--bg-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.connection-username {
+    font-weight: 600;
+    color: var(--text-highlight);
+}
+
+.connection-action-btn {
+    background-color: var(--input-bg);
+    color: var(--text-white);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.connection-action-btn:hover {
+    background-color: var(--color-orange);
+    color: var(--bg-color);
+}
+
+.connection-action-btn.unfollow:hover {
+    background-color: var(--danger-color);
+    color: var(--text-white);
+}
+
+/* Notifications List */
+.notifications-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.notification-item {
+    padding: 16px;
+    background-color: var(--panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: var(--transition);
+}
+
+.notification-item.unread {
+    border-left: 4px solid var(--color-orange);
+    background-color: var(--panel-hover);
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--text-white);
+}
+
+.notification-icon {
+    font-size: 18px;
+    color: var(--color-orange);
+}
+
+.notification-item.unread .notification-icon {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.notification-time {
+    display: block;
+    font-size: 11px;
+    color: var(--text-color);
+    margin-top: 4px;
+}
+
+.notification-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.notification-btn {
+    background: transparent;
+    color: var(--text-color);
+    font-size: 13px;
+    padding: 4px;
+}
+
+.notification-btn:hover {
+    color: var(--text-white);
+}
+
+.notification-btn.mark-read:hover {
+    color: var(--color-green);
+}
+
+/* ==========================================================================
+   COMMENTS ON REVIEWS SECTION
+   ========================================================================== */
+.comments-toggle-btn {
+    background: transparent;
+    color: var(--text-color);
+    font-size: 13px;
+    border-radius: 4px;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: var(--transition);
+}
+
+.comments-toggle-btn:hover {
+    color: var(--color-blue);
+    background-color: var(--panel-hover);
+}
+
+.comments-section-container {
+    margin-top: 16px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.comments-list-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.comment-item {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 13px;
+}
+
+.comment-item-header {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-color);
+    font-size: 11px;
+    margin-bottom: 4px;
+}
+
+.comment-item-user {
+    font-weight: 700;
+    color: var(--color-blue);
+}
+
+.comment-item-text {
+    color: var(--text-white);
+    line-height: 1.4;
+}
+
+.comment-form {
+    display: flex;
+    gap: 8px;
+}
+
+.comment-input {
+    flex-grow: 1;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-white);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+}
+
+.comment-input:focus {
+    border-color: var(--color-blue);
+}
+
+.comment-submit-btn {
+    background-color: var(--input-bg);
+    color: var(--text-white);
+    padding: 0 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.comment-submit-btn:hover {
+    background-color: var(--color-orange);
+    color: var(--bg-color);
+}
+
+/* Awards displays in Movie modal */
+.detail-awards-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.detail-awards-section h3 {
+    font-family: var(--font-title);
+    font-size: 15px;
+    color: var(--text-white);
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.detail-awards-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.award-badge {
+    background-color: rgba(250, 189, 47, 0.1);
+    border: 1px solid var(--star-color);
+    color: var(--star-color);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
 }
