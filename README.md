@@ -85,3 +85,5 @@ The application is pre-seeded with 10 legendary films to provide immediate conte
 * *Pulp Fiction* (1994)
 * *Whiplash* (2014)
 * *La La Land* (2016)
+
+Thank you for using. 
