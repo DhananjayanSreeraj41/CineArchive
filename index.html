@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBox — Track, Rate, and Review Films</title>
-    <!-- Google Fonts: Inter & Outfit -->
+    <title>CinéArchive — Film Discovery, Rating, and Curation</title>
+    <!-- Google Fonts: Cormorant Garamond, Inter, IBM Plex Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Main Stylesheet -->
@@ -15,17 +15,18 @@
 </head>
 <body>
 
+    <!-- Ambient Film Grain Overlay -->
+    <div id="grain"></div>
+
     <!-- Header Navigation -->
     <header class="app-header">
         <div class="header-container">
             <!-- Logo Section -->
             <a href="#" class="logo-btn" id="nav-logo">
-                <div class="logo-icon">
-                    <span class="circle circle-orange"></span>
-                    <span class="circle circle-green"></span>
-                    <span class="circle circle-blue"></span>
+                <div class="logo-icon-aperture">
+                    <span class="mark-dot"></span>
                 </div>
-                <span class="logo-text">My<span>Box</span></span>
+                <span class="logo-text">Ciné<em>Archive</em></span>
             </a>
 
             <!-- Navigation Links -->
@@ -60,8 +61,8 @@
             <div class="hero-banner">
                 <div class="hero-overlay"></div>
                 <div class="hero-content">
-                    <h1>Track films you've watched.<br>Save those you want to see.<br>Tell your friends what's good.</h1>
-                    <p class="hero-subtext">The social platform for film lovers. Welcome to <strong>MyBox</strong>, your personal journal of cinema.</p>
+                    <h1>Discover <em>meaningful cinema</em>.<br>Rate and review films.<br>Curate <em>themed collections</em>.</h1>
+                    <p class="hero-subtext">The database-driven platform for film lovers. Welcome to <strong>CinéArchive</strong>, your community journal of cinema.</p>
                     <div class="hero-cta">
                         <button class="btn btn-secondary nav-redirect-btn" data-target="films">Browse Films</button>
                         <button class="btn btn-primary log-btn-trigger">Log Your First Film</button>
@@ -79,6 +80,10 @@
                     <div class="stat-card">
                         <span class="stat-num" id="stat-total-reviews">0</span>
                         <span class="stat-label">Your Reviews</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-num" id="stat-total-awards">12</span>
+                        <span class="stat-label">Awards Logged</span>
                     </div>
                 </div>
             </div>
@@ -126,22 +131,69 @@
                     <p class="section-desc">Explore our database of films. Rate, like, or log any title to update your journal.</p>
                 </div>
                 <!-- Catalog Filters -->
-                <div class="catalog-filters">
-                    <div class="filter-group">
-                        <label for="filter-genre">Genre</label>
-                        <select id="filter-genre">
-                            <option value="all">All Genres</option>
-                            <!-- Genres populated by JS -->
-                        </select>
+                <div class="catalog-filters advanced-filters-container">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="filter-genre">Genre</label>
+                            <select id="filter-genre">
+                                <option value="all">All Genres</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-director">Director</label>
+                            <select id="filter-director">
+                                <option value="all">All Directors</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-language">Language</label>
+                            <select id="filter-language">
+                                <option value="all">All Languages</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-country">Country</label>
+                            <select id="filter-country">
+                                <option value="all">All Countries</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="filter-group">
-                        <label for="sort-films">Sort By</label>
-                        <select id="sort-films">
-                            <option value="popularity">Popularity</option>
-                            <option value="rating">Average Rating</option>
-                            <option value="year-desc">Release Date (Newest)</option>
-                            <option value="year-asc">Release Date (Oldest)</option>
-                        </select>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="filter-year">Release Year</label>
+                            <select id="filter-year">
+                                <option value="all">All Years</option>
+                                <option value="2020s">2020s (2020-Present)</option>
+                                <option value="2010s">2010s (2010-2019)</option>
+                                <option value="2000s">2000s (2000-2009)</option>
+                                <option value="1990s">1990s (1990-1999)</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-awards">Awards</label>
+                            <select id="filter-awards">
+                                <option value="all">All Films</option>
+                                <option value="won">Award Winners Only</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-rating">Min Rating</label>
+                            <select id="filter-rating">
+                                <option value="0">Any Rating</option>
+                                <option value="4.5">4.5★ & Up</option>
+                                <option value="4.0">4.0★ & Up</option>
+                                <option value="3.5">3.5★ & Up</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="sort-films">Sort By</label>
+                            <select id="sort-films">
+                                <option value="popularity">Popularity</option>
+                                <option value="rating">Average Rating</option>
+                                <option value="year-desc">Release Date (Newest)</option>
+                                <option value="year-asc">Release Date (Oldest)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -237,6 +289,8 @@
                 <button class="profile-tab-btn" data-profile-section="watchlist">Watchlist</button>
                 <button class="profile-tab-btn" data-profile-section="likes">Liked Films</button>
                 <button class="profile-tab-btn" data-profile-section="mylists">My Lists</button>
+                <button class="profile-tab-btn" data-profile-section="connections">Connections</button>
+                <button class="profile-tab-btn" data-profile-section="notifications">Notifications <span class="badge" id="profile-notify-badge">0</span></button>
             </div>
 
             <!-- Diary Section -->
@@ -285,6 +339,208 @@
                     <!-- Populated by JavaScript -->
                 </div>
             </div>
+
+            <!-- Connections Section -->
+            <div class="profile-section-content hidden" id="profile-connections-section">
+                <h2>Your Connections</h2>
+                <div class="connections-layout">
+                    <div class="connection-column">
+                        <h3>Following</h3>
+                        <div class="connection-list" id="profile-following-list">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+                    <div class="connection-column">
+                        <h3>Followers</h3>
+                        <div class="connection-list" id="profile-followers-list">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications Section -->
+            <div class="profile-section-content hidden" id="profile-notifications-section">
+                <h2>Activity Notifications</h2>
+                <div class="notifications-list" id="profile-notifications-list">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= ADMIN/DATABASE TAB ================= -->
+        <section id="admin-tab" class="tab-content hidden">
+            <div class="admin-dashboard-container">
+                <div class="admin-header">
+                    <div>
+                        <h1>Database Administration Console</h1>
+                        <p class="section-desc">Interact with CinéArchive's simulated relational database. Normalize tables, run SQL, and test triggers.</p>
+                    </div>
+                    <div class="role-selector-container">
+                        <span class="role-label"><i class="fa-solid fa-user-shield"></i> Active Role:</span>
+                        <select id="db-role-selector">
+                            <option value="user">User (Read-only)</option>
+                            <option value="admin" selected>Administrator (Full CRUD)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="db-stats-grid">
+                    <div class="db-stat-card">
+                        <i class="fa-solid fa-table db-stat-icon"></i>
+                        <div>
+                            <span class="db-stat-num">14</span>
+                            <span class="db-stat-label">Relational Tables</span>
+                        </div>
+                    </div>
+                    <div class="db-stat-card">
+                        <i class="fa-solid fa-database db-stat-icon"></i>
+                        <div>
+                            <span class="db-stat-num" id="db-total-records">0</span>
+                            <span class="db-stat-label">Total Rows</span>
+                        </div>
+                    </div>
+                    <div class="db-stat-card">
+                        <i class="fa-solid fa-bolt db-stat-icon"></i>
+                        <div>
+                            <span class="db-stat-num">3</span>
+                            <span class="db-stat-label">Active Triggers</span>
+                        </div>
+                    </div>
+                    <div class="db-stat-card">
+                        <i class="fa-solid fa-gears db-stat-icon"></i>
+                        <div>
+                            <span class="db-stat-num">3</span>
+                            <span class="db-stat-label">Procedures / Views</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-layout">
+                    <!-- Sidebar Menu -->
+                    <div class="admin-sidebar">
+                        <button class="admin-menu-btn active" data-admin-panel="tables"><i class="fa-solid fa-table-list"></i> Table Explorer</button>
+                        <button class="admin-menu-btn" data-admin-panel="sql"><i class="fa-solid fa-terminal"></i> SQL Console</button>
+                        <button class="admin-menu-btn" data-admin-panel="procedures"><i class="fa-solid fa-server"></i> Procedures & Views</button>
+                        <button class="admin-menu-btn" data-admin-panel="logs"><i class="fa-solid fa-rectangle-list"></i> DB Engine Logs <span class="badge" id="log-count-badge">0</span></button>
+                    </div>
+
+                    <!-- Panel Display Area -->
+                    <div class="admin-panel-content">
+                        <!-- Table Explorer -->
+                        <div class="admin-panel-section" id="admin-panel-tables">
+                            <div class="panel-section-header">
+                                <h3>Interactive Table Browser</h3>
+                                <div class="table-selector-row">
+                                    <select id="db-table-select">
+                                        <!-- Populated dynamically -->
+                                    </select>
+                                    <button class="btn btn-primary" id="db-add-row-btn"><i class="fa-solid fa-plus"></i> Insert Row</button>
+                                </div>
+                            </div>
+                            <p class="table-info-meta" id="table-info-meta-text">Select a table to view its relational schema and record count.</p>
+                            <div class="table-responsive db-table-view-wrapper">
+                                <table class="diary-table db-data-table">
+                                    <thead id="db-table-thead"></thead>
+                                    <tbody id="db-table-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- SQL Console -->
+                        <div class="admin-panel-section hidden" id="admin-panel-sql">
+                            <div class="panel-section-header">
+                                <h3>SQL Sandbox Query Engine</h3>
+                                <div class="sql-template-row">
+                                    <label for="sql-templates">Predefined Queries:</label>
+                                    <select id="sql-templates">
+                                        <option value="">-- Choose a template query --</option>
+                                        <option value="SELECT movies.title, directors.name FROM movies JOIN directors ON movies.director_id = directors.id">1. Movie & Director Details (JOIN)</option>
+                                        <option value="SELECT genres.name, COUNT(*) as film_count FROM movie_genres JOIN genres ON movie_genres.genre_id = genres.id GROUP BY genres.name ORDER BY film_count DESC">2. Genre Distribution (JOIN & GROUP BY)</option>
+                                        <option value="SELECT movies.title, awards.name, awards.category FROM awards JOIN movies ON awards.movie_id = movies.id WHERE awards.year_won > 2010">3. Recent Awards (JOIN & WHERE)</option>
+                                        <option value="SELECT users.username, reviews.review_text, reviews.likes_count FROM reviews JOIN users ON reviews.user_id = users.id WHERE reviews.likes_count > 10">4. High-liked User Reviews (JOIN & WHERE)</option>
+                                        <option value="SELECT movies.title, ratings.rating_value FROM ratings JOIN movies ON ratings.movie_id = movies.id WHERE ratings.rating_value = 5">5. All 5-Star Rated Films</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="sql-editor-container">
+                                <textarea id="sql-query-input" rows="4" placeholder="Type SQL query here (e.g. SELECT movies.title, directors.name FROM movies JOIN directors ON movies.director_id = directors.id WHERE movies.year > 2010)"></textarea>
+                                <div class="sql-action-row">
+                                    <span class="sql-status" id="sql-execution-status">Connected to DB (3NF Schema)</span>
+                                    <button class="btn btn-primary" id="sql-run-btn"><i class="fa-solid fa-play"></i> Execute Query</button>
+                                </div>
+                            </div>
+                            <div class="query-results-container">
+                                <div class="query-plan-box hidden" id="query-plan-box">
+                                    <strong>Query Execution Plan:</strong>
+                                    <p id="query-plan-text"></p>
+                                </div>
+                                <div class="table-responsive db-table-view-wrapper">
+                                    <table class="diary-table db-data-table" id="sql-results-table">
+                                        <thead id="sql-results-thead"></thead>
+                                        <tbody id="sql-results-tbody">
+                                            <tr><td style="text-align: center;">Execute a query to view results.</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Procedures & Views -->
+                        <div class="admin-panel-section hidden" id="admin-panel-procedures">
+                            <h3>Stored Procedures & Database Views</h3>
+                            <p class="section-desc">Call complex database procedures or inspect pre-compiled views.</p>
+                            
+                            <div class="procedures-grid">
+                                <div class="proc-card">
+                                    <h4>sp_generate_recommendations</h4>
+                                    <p>Computes highly-rated genres and recommends unwatched films in those genres using database set-matching.</p>
+                                    <div class="proc-input-group">
+                                        <label>User:</label>
+                                        <select id="proc-rec-user-id"></select>
+                                    </div>
+                                    <button class="btn btn-secondary btn-sm run-proc-btn" data-proc="recommendations">Run Procedure</button>
+                                </div>
+                                
+                                <div class="proc-card">
+                                    <h4>sp_user_analytics</h4>
+                                    <p>Triggers analytical aggregation queries across all user activities to evaluate user taste profiles.</p>
+                                    <div class="proc-input-group">
+                                        <label>User:</label>
+                                        <select id="proc-analytics-user-id"></select>
+                                    </div>
+                                    <button class="btn btn-secondary btn-sm run-proc-btn" data-proc="analytics">Run Procedure</button>
+                                </div>
+                                
+                                <div class="proc-card">
+                                    <h4>vw_movie_awards</h4>
+                                    <p>Predefined Database View linking Movies and Directors to list awards and highlight critically acclaimed cinema.</p>
+                                    <button class="btn btn-secondary btn-sm run-proc-btn" data-proc="vw_awards">Query View</button>
+                                </div>
+                            </div>
+
+                            <div class="proc-output-container hidden" id="proc-output-box">
+                                <div class="proc-output-header">
+                                    <strong>Console Execution Output:</strong>
+                                    <button class="btn btn-icon" id="proc-output-close"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <pre id="proc-output-pre"></pre>
+                            </div>
+                        </div>
+
+                        <!-- DB Logs -->
+                        <div class="admin-panel-section hidden" id="admin-panel-logs">
+                            <div class="panel-section-header">
+                                <h3>Database Event Console</h3>
+                                <button class="btn btn-secondary btn-sm" id="clear-db-logs-btn">Clear Logs</button>
+                            </div>
+                            <p class="section-desc">Live output of triggers, index scans, constraint checks, and database transaction queries.</p>
+                            <div class="terminal-box" id="db-engine-logs-console"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </section>
 
     </main>
@@ -292,7 +548,7 @@
     <!-- Footer -->
     <footer class="app-footer">
         <div class="footer-container">
-            <p>&copy; 2026 MyBox. Made with <i class="fa-solid fa-heart text-danger"></i> for Cinephiles.</p>
+            <p>&copy; 2026 CinéArchive. Made with <i class="fa-solid fa-heart text-danger"></i> for Cinephiles.</p>
             <div class="footer-links">
                 <a href="#" class="nav-redirect-btn" data-target="home">Home</a>
                 <a href="#" class="nav-redirect-btn" data-target="films">Films</a>
@@ -435,9 +691,17 @@
                         <p id="detail-cast">Matthew McConaughey, Anne Hathaway, Jessica Chastain</p>
                     </div>
 
+                    <!-- Awards Section -->
+                    <div class="detail-awards-section hidden" id="detail-awards-container">
+                        <h3>Awards & Achievements</h3>
+                        <div class="detail-awards-list" id="detail-awards-list">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+
                     <!-- Reviews on this film -->
                     <div class="detail-reviews-section">
-                        <h3>Reviews on MyBox</h3>
+                        <h3>Reviews on CinéArchive</h3>
                         <div class="detail-reviews-list" id="detail-reviews-list">
                             <!-- Populated by JavaScript -->
                         </div>
@@ -476,6 +740,25 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" id="create-list-modal-cancel">Cancel</button>
                     <button type="submit" class="btn btn-primary">Create List</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= INSERT ROW MODAL ================= -->
+    <div class="modal-overlay hidden" id="insert-row-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2 id="insert-row-modal-title">Insert New Record</h2>
+                <button class="modal-close" id="insert-row-modal-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="insert-row-form">
+                <div id="insert-row-fields-container" style="max-height: 400px; overflow-y: auto; padding-right: 8px;">
+                    <!-- Populated dynamically based on selected table schema -->
+                </div>
+                <div class="modal-footer" style="margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" id="insert-row-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Insert Record</button>
                 </div>
             </form>
         </div>
