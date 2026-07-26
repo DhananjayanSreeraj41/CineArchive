@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyBox — Track, Rate, and Review Films</title>
+    <!-- Google Fonts: Inter & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="app-header">
+        <div class="header-container">
+            <!-- Logo Section -->
+            <a href="#" class="logo-btn" id="nav-logo">
+                <div class="logo-icon">
+                    <span class="circle circle-orange"></span>
+                    <span class="circle circle-green"></span>
+                    <span class="circle circle-blue"></span>
+                </div>
+                <span class="logo-text">My<span>Box</span></span>
+            </a>
+
+            <!-- Navigation Links -->
+            <nav class="nav-links">
+                <a href="#" class="nav-item active" data-tab="home"><i class="fa-solid fa-house"></i> Home</a>
+                <a href="#" class="nav-item" data-tab="films"><i class="fa-solid fa-film"></i> Films</a>
+                <a href="#" class="nav-item" data-tab="reviews"><i class="fa-solid fa-quote-left"></i> Reviews</a>
+                <a href="#" class="nav-item" data-tab="lists"><i class="fa-solid fa-list-ul"></i> Lists</a>
+                <a href="#" class="nav-item" data-tab="profile" id="profile-nav-link"><i class="fa-solid fa-user"></i> Profile</a>
+            </nav>
+
+            <!-- Search and Actions -->
+            <div class="header-actions">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="global-search" placeholder="Search films...">
+                    <div id="search-results-dropdown" class="search-dropdown hidden"></div>
+                </div>
+                <button class="btn btn-primary log-btn-trigger" id="global-log-btn">
+                    <i class="fa-solid fa-plus"></i> Log
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="app-main">
+
+        <!-- ================= HOME TAB ================= -->
+        <section id="home-tab" class="tab-content active">
+            <!-- Hero Banner -->
+            <div class="hero-banner">
+                <div class="hero-overlay"></div>
+                <div class="hero-content">
+                    <h1>Track films you've watched.<br>Save those you want to see.<br>Tell your friends what's good.</h1>
+                    <p class="hero-subtext">The social platform for film lovers. Welcome to <strong>MyBox</strong>, your personal journal of cinema.</p>
+                    <div class="hero-cta">
+                        <button class="btn btn-secondary nav-redirect-btn" data-target="films">Browse Films</button>
+                        <button class="btn btn-primary log-btn-trigger">Log Your First Film</button>
+                    </div>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-card">
+                        <span class="stat-num" id="stat-total-films">10</span>
+                        <span class="stat-label">Available Films</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-num" id="stat-total-logs">0</span>
+                        <span class="stat-label">Your Logged Films</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-num" id="stat-total-reviews">0</span>
+                        <span class="stat-label">Your Reviews</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Grid -->
+            <div class="home-grid">
+                <!-- Popular Films Grid (Left side) -->
+                <div class="grid-section main-section">
+                    <div class="section-header">
+                        <h2>Popular Films This Week</h2>
+                        <a href="#" class="view-all-link nav-redirect-btn" data-target="films">View All</a>
+                    </div>
+                    <div class="films-slider" id="popular-films-grid">
+                        <!-- Populated by JavaScript -->
+                    </div>
+
+                    <!-- Curated Lists Section -->
+                    <div class="section-header list-section-header">
+                        <h2>Popular Lists</h2>
+                        <a href="#" class="view-all-link nav-redirect-btn" data-target="lists">View All</a>
+                    </div>
+                    <div class="lists-grid" id="popular-lists-grid">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Recent Activity & Reviews (Right side) -->
+                <div class="grid-section side-section">
+                    <div class="section-header">
+                        <h2>Recent Reviews</h2>
+                        <a href="#" class="view-all-link nav-redirect-btn" data-target="reviews">View All</a>
+                    </div>
+                    <div class="reviews-list-compact" id="home-reviews-list">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= FILMS TAB ================= -->
+        <section id="films-tab" class="tab-content hidden">
+            <div class="catalog-header">
+                <div>
+                    <h1>Browse Films</h1>
+                    <p class="section-desc">Explore our database of films. Rate, like, or log any title to update your journal.</p>
+                </div>
+                <!-- Catalog Filters -->
+                <div class="catalog-filters">
+                    <div class="filter-group">
+                        <label for="filter-genre">Genre</label>
+                        <select id="filter-genre">
+                            <option value="all">All Genres</option>
+                            <!-- Genres populated by JS -->
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="sort-films">Sort By</label>
+                        <select id="sort-films">
+                            <option value="popularity">Popularity</option>
+                            <option value="rating">Average Rating</option>
+                            <option value="year-desc">Release Date (Newest)</option>
+                            <option value="year-asc">Release Date (Oldest)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Film Grid -->
+            <div class="films-grid-layout" id="films-catalog-grid">
+                <!-- Populated by JavaScript -->
+            </div>
+        </section>
+
+        <!-- ================= REVIEWS TAB ================= -->
+        <section id="reviews-tab" class="tab-content hidden">
+            <div class="reviews-header">
+                <div>
+                    <h1>Community Reviews</h1>
+                    <p class="section-desc">See what others are writing about. Write your own review by logging a film.</p>
+                </div>
+                <button class="btn btn-primary log-btn-trigger"><i class="fa-solid fa-pen-fancy"></i> Write a Review</button>
+            </div>
+
+            <div class="reviews-layout">
+                <div class="reviews-feed" id="full-reviews-feed">
+                    <!-- Populated by JavaScript -->
+                </div>
+                <div class="reviews-sidebar">
+                    <div class="sticky-card">
+                        <h3>Your Reviewing Stats</h3>
+                        <div class="sidebar-stat-row">
+                            <span>Reviewed Films:</span>
+                            <strong id="sidebar-reviewed-count">0</strong>
+                        </div>
+                        <div class="sidebar-stat-row">
+                            <span>Average Given Rating:</span>
+                            <strong id="sidebar-avg-rating">0.0 ★</strong>
+                        </div>
+                        <div class="sidebar-stat-row">
+                            <span>Total Likes Given:</span>
+                            <strong id="sidebar-likes-count">0 <i class="fa-solid fa-heart text-danger"></i></strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= LISTS TAB ================= -->
+        <section id="lists-tab" class="tab-content hidden">
+            <div class="lists-header">
+                <div>
+                    <h1>Curated Movie Lists</h1>
+                    <p class="section-desc">Create and explore film collections curated by the MyBox community.</p>
+                </div>
+                <button class="btn btn-primary" id="create-list-trigger-btn"><i class="fa-solid fa-plus"></i> Create a List</button>
+            </div>
+
+            <div class="lists-catalog-grid" id="lists-catalog-grid">
+                <!-- Populated by JavaScript -->
+            </div>
+        </section>
+
+        <!-- ================= PROFILE TAB ================= -->
+        <section id="profile-tab" class="tab-content hidden">
+            <div class="profile-banner">
+                <div class="profile-avatar">
+                    <i class="fa-solid fa-user-astronaut"></i>
+                </div>
+                <div class="profile-info">
+                    <h1 id="profile-username">CinephileExplorer</h1>
+                    <p class="profile-bio">Welcome to my movie diary. Watching films, writing reviews, and curating collections.</p>
+                </div>
+                <div class="profile-counters">
+                    <div class="counter-item">
+                        <span class="counter-num" id="profile-watched-count">0</span>
+                        <span class="counter-label">Watched</span>
+                    </div>
+                    <div class="counter-item">
+                        <span class="counter-num" id="profile-watchlist-count">0</span>
+                        <span class="counter-label">Watchlist</span>
+                    </div>
+                    <div class="counter-item">
+                        <span class="counter-num" id="profile-likes-count">0</span>
+                        <span class="counter-label">Liked</span>
+                    </div>
+                    <div class="counter-item">
+                        <span class="counter-num" id="profile-lists-count">0</span>
+                        <span class="counter-label">Lists</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Nav Tabs -->
+            <div class="profile-tabs">
+                <button class="profile-tab-btn active" data-profile-section="diary">Diary & Logs</button>
+                <button class="profile-tab-btn" data-profile-section="watchlist">Watchlist</button>
+                <button class="profile-tab-btn" data-profile-section="likes">Liked Films</button>
+                <button class="profile-tab-btn" data-profile-section="mylists">My Lists</button>
+            </div>
+
+            <!-- Diary Section -->
+            <div class="profile-section-content" id="profile-diary-section">
+                <h2>Your Journal</h2>
+                <div class="table-responsive">
+                    <table class="diary-table">
+                        <thead>
+                            <tr>
+                                <th>Date Logged</th>
+                                <th>Film Title</th>
+                                <th>Year</th>
+                                <th>Your Rating</th>
+                                <th>Liked</th>
+                                <th>Review</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="profile-diary-table-body">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Watchlist Section -->
+            <div class="profile-section-content hidden" id="profile-watchlist-section">
+                <h2>Films you want to watch</h2>
+                <div class="films-grid-layout" id="profile-watchlist-grid">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Liked Section -->
+            <div class="profile-section-content hidden" id="profile-likes-section">
+                <h2>Films you've liked</h2>
+                <div class="films-grid-layout" id="profile-likes-grid">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- My Lists Section -->
+            <div class="profile-section-content hidden" id="profile-mylists-section">
+                <h2>Your Custom Lists</h2>
+                <div class="lists-catalog-grid" id="profile-mylists-grid">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div class="footer-container">
+            <p>&copy; 2026 MyBox. Made with <i class="fa-solid fa-heart text-danger"></i> for Cinephiles.</p>
+            <div class="footer-links">
+                <a href="#" class="nav-redirect-btn" data-target="home">Home</a>
+                <a href="#" class="nav-redirect-btn" data-target="films">Films</a>
+                <a href="#" class="nav-redirect-btn" data-target="reviews">Reviews</a>
+                <a href="#" class="nav-redirect-btn" data-target="lists">Lists</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ================= LOG FILM MODAL ================= -->
+    <div class="modal-overlay hidden" id="log-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2>Log a Film</h2>
+                <button class="modal-close" id="log-modal-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="log-film-form">
+                <!-- Select Film Input -->
+                <div class="form-group">
+                    <label for="log-film-select">Select Film <span class="required">*</span></label>
+                    <div class="select-search-container">
+                        <select id="log-film-select" required>
+                            <option value="" disabled selected>Choose a film to log...</option>
+                            <!-- Populated by JavaScript -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Rating -->
+                <div class="form-group">
+                    <label>Your Rating</label>
+                    <div class="star-rating" id="modal-star-rating">
+                        <i class="fa-regular fa-star rating-star" data-rating="1"></i>
+                        <i class="fa-regular fa-star rating-star" data-rating="2"></i>
+                        <i class="fa-regular fa-star rating-star" data-rating="3"></i>
+                        <i class="fa-regular fa-star rating-star" data-rating="4"></i>
+                        <i class="fa-regular fa-star rating-star" data-rating="5"></i>
+                    </div>
+                    <input type="hidden" id="log-rating-value" value="0">
+                </div>
+
+                <!-- Review Text -->
+                <div class="form-group">
+                    <label for="log-review-text">Review / Notes</label>
+                    <textarea id="log-review-text" rows="5" placeholder="Write your thoughts about this film..."></textarea>
+                </div>
+
+                <!-- Options Row -->
+                <div class="form-options-row">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="log-like-checkbox">
+                        <span class="checkbox-checkmark"></span>
+                        <i class="fa-solid fa-heart inline-heart"></i> Like this film
+                    </label>
+
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="log-watchlist-checkbox">
+                        <span class="checkbox-checkmark"></span>
+                        <i class="fa-solid fa-bookmark inline-bookmark"></i> Add to/Keep in Watchlist
+                    </label>
+                </div>
+
+                <!-- Date -->
+                <div class="form-group">
+                    <label for="log-date">Watch Date</label>
+                    <input type="date" id="log-date" required>
+                </div>
+
+                <!-- Footer Buttons -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="log-modal-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Log</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= FILM DETAIL MODAL ================= -->
+    <div class="modal-overlay hidden" id="detail-modal">
+        <div class="modal-container detail-modal-container">
+            <button class="modal-close detail-modal-close" id="detail-modal-close"><i class="fa-solid fa-xmark"></i></button>
+            
+            <!-- Backdrop banner -->
+            <div class="detail-backdrop" id="detail-backdrop-img">
+                <div class="detail-backdrop-overlay"></div>
+            </div>
+
+            <!-- Detail Content -->
+            <div class="detail-content-wrapper">
+                <div class="detail-poster-column">
+                    <img id="detail-poster" src="" alt="Film Poster">
+                    <!-- Action Panel -->
+                    <div class="action-panel">
+                        <button class="action-btn" id="action-watch-btn" title="Mark as Watched">
+                            <i class="fa-regular fa-circle-check"></i>
+                            <span>Watched</span>
+                        </button>
+                        <button class="action-btn" id="action-like-btn" title="Like">
+                            <i class="fa-regular fa-heart"></i>
+                            <span>Like</span>
+                        </button>
+                        <button class="action-btn" id="action-watchlist-btn" title="Add to Watchlist">
+                            <i class="fa-regular fa-bookmark"></i>
+                            <span>Watchlist</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="detail-info-column">
+                    <div class="detail-title-row">
+                        <h1 id="detail-title">Interstellar</h1>
+                        <span class="detail-year" id="detail-year">2014</span>
+                        <span class="detail-director-by">Directed by <span id="detail-director">Christopher Nolan</span></span>
+                    </div>
+
+                    <div class="detail-meta">
+                        <span id="detail-runtime">169 mins</span>
+                        <span class="meta-dot">&middot;</span>
+                        <span id="detail-genres">Sci-Fi, Adventure</span>
+                    </div>
+
+                    <div class="detail-stats-row">
+                        <div class="detail-stat">
+                            <span class="val" id="detail-avg-rating-val">4.6 ★</span>
+                            <span class="lbl">Average Rating</span>
+                        </div>
+                        <div class="detail-stat">
+                            <span class="val" id="detail-likes-count-val">4,203</span>
+                            <span class="lbl">Likes</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-synopsis-section">
+                        <h3>Synopsis</h3>
+                        <p id="detail-synopsis">The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.</p>
+                    </div>
+
+                    <div class="detail-cast-section">
+                        <h3>Starring</h3>
+                        <p id="detail-cast">Matthew McConaughey, Anne Hathaway, Jessica Chastain</p>
+                    </div>
+
+                    <!-- Reviews on this film -->
+                    <div class="detail-reviews-section">
+                        <h3>Reviews on MyBox</h3>
+                        <div class="detail-reviews-list" id="detail-reviews-list">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= CREATE LIST MODAL ================= -->
+    <div class="modal-overlay hidden" id="create-list-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2>Create a Movie List</h2>
+                <button class="modal-close" id="create-list-modal-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="create-list-form">
+                <div class="form-group">
+                    <label for="list-name">List Name <span class="required">*</span></label>
+                    <input type="text" id="list-name" placeholder="e.g. Cinematic Masterpieces of the 21st Century" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="list-desc">Description</label>
+                    <textarea id="list-desc" rows="3" placeholder="Explain what this list is about..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Select Films to Include <span class="required">*</span></label>
+                    <p class="help-text">Choose at least 2 films to save this list.</p>
+                    <div class="checkbox-films-list" id="list-films-checkboxes">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="create-list-modal-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create List</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script src="app.js"></script>
+</body>
+</html>
