@@ -92,7 +92,11 @@ public class Server {
                 os.write(response.getBytes());
                 os.close();
             } catch (Exception e) {
-                String err = "{\"error\": \"" + String.valueOf(e.getMessage()).replace("\"", "\\\"").replace("\n", " ") + "\"}";
+                String errMsg = e.getMessage();
+                if (errMsg != null && errMsg.contains("UNIQUE constraint failed: users.email")) {
+                    errMsg = "Username already exists. Please choose a different username.";
+                }
+                String err = "{\"error\": \"" + String.valueOf(errMsg).replace("\"", "\\\"").replace("\n", " ") + "\"}";
                 t.getResponseHeaders().add("Content-Type", "application/json");
                 t.sendResponseHeaders(400, err.getBytes().length);
                 OutputStream os = t.getResponseBody();
