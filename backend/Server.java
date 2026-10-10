@@ -87,7 +87,7 @@ public class Server {
                 os.write(response.getBytes());
                 os.close();
             } catch (Exception e) {
-                String err = "{\"error\": \"" + e.getMessage().replace("\"", "\\\"").replace("\n", " ") + "\"}";
+                String err = "{\"error\": \"" + String.valueOf(e.getMessage()).replace("\"", "\\\"").replace("\n", " ") + "\"}";
                 t.getResponseHeaders().add("Content-Type", "application/json");
                 t.sendResponseHeaders(400, err.getBytes().length);
                 OutputStream os = t.getResponseBody();
@@ -137,7 +137,7 @@ public class Server {
                 os.write(response.getBytes());
                 os.close();
             } catch (Exception e) {
-                String err = "{\"error\": \"" + e.getMessage().replace("\"", "\\\"").replace("\n", " ") + "\"}";
+                String err = "{\"error\": \"" + String.valueOf(e.getMessage()).replace("\"", "\\\"").replace("\n", " ") + "\"}";
                 t.getResponseHeaders().add("Content-Type", "application/json");
                 t.sendResponseHeaders(400, err.getBytes().length);
                 OutputStream os = t.getResponseBody();
@@ -212,7 +212,7 @@ public class Server {
                 os.close();
                 
             } catch (Exception e) {
-                String err = "{\"error\": \"" + e.getMessage().replace("\"", "\\\"").replace("\n", " ") + "\"}";
+                String err = "{\"error\": \"" + String.valueOf(e.getMessage()).replace("\"", "\\\"").replace("\n", " ") + "\"}";
                 t.getResponseHeaders().add("Content-Type", "application/json");
                 t.sendResponseHeaders(400, err.getBytes().length);
                 OutputStream os = t.getResponseBody();
