@@ -179,7 +179,7 @@ class CineArchiveDB {
         };
         this.logs = [];
         this.activeRole = "admin"; // Default view role
-        this.activeUserId = "u1"; // CinephileExplorer session user
+        this.activeUserId = localStorage.getItem("activeUserId") || null; // Session user
         // this.init() is now called asynchronously
     }
 
@@ -211,13 +211,16 @@ class CineArchiveDB {
                         this.tables[table] = data;
                     } else {
                         success = false;
+                        break;
                     }
                 } else {
                     success = false;
+                    break;
                 }
             } catch (err) {
                 console.error(`Error loading table ${table}:`, err);
                 success = false;
+                break;
             }
         }
         
@@ -996,7 +999,7 @@ function initApp() {
 // Refresh notification indicator
 function updateUnreadNotifyCount() {
     const user = state.getActiveUser();
-    const unreads = db.tables.notifications.filter(n => n.user_id === user.id && !n.is_read).length;
+    const unreads = db.tables.notifications.filter(n => n.user_id === user?.id && !n.is_read).length;
     const badge = document.getElementById("profile-notify-badge");
     if (badge) {
         badge.textContent = unreads;
@@ -1036,8 +1039,8 @@ function updateGlobalStats() {
     const user = state.getActiveUser();
     if (!user) return; // Safeguard if DB is empty
     
-    const watchedCount = db.tables.ratings.filter(r => r.user_id === user.id).length;
-    const reviewCount = db.tables.reviews.filter(r => r.user_id === user.id && r.review_text.trim() !== "").length;
+    const watchedCount = db.tables.ratings.filter(r => r.user_id === user?.id).length;
+    const reviewCount = db.tables.reviews.filter(r => r.user_id === user?.id && r.review_text.trim() !== "").length;
     const awardsCount = db.tables.awards.length;
 
     const totalFilmsEl = document.getElementById("stat-total-films");
@@ -1235,10 +1238,10 @@ function renderReviewsFeed() {
             const author = db.tables.users.find(u => u.id === rev.user_id);
             if (!film || !author) return "";
 
-            const isUserReview = rev.user_id === currentUser.id;
+            const isUserReview = rev.user_id === currentUser?.id;
             
             // Check follow relation
-            const isFollowingAuthor = db.tables.followers.some(f => f.follower_user_id === currentUser.id && f.followed_user_id === author.id);
+            const isFollowingAuthor = db.tables.followers.some(f => f.follower_user_id === currentUser?.id && f.followed_user_id === author.id);
             const followBtnHtml = isUserReview ? "" : `
                 <button class="connection-action-btn follow-feed-btn ${isFollowingAuthor ? "unfollow" : ""}" data-author-id="${author.id}">
                     ${isFollowingAuthor ? "Unfollow" : "Follow"}
@@ -1298,13 +1301,13 @@ function renderReviewsFeed() {
     }
 
     // Sidebar aggregate values (User profile metrics)
-    const statsResult = db.sp_user_analytics(currentUser.id);
+    const statsResult = db.sp_user_analytics(currentUser?.id);
     if (statsResult.status === "Success") {
         const m = statsResult.metrics;
         if (sidebarReviewed) sidebarReviewed.textContent = m.totalWatched;
         if (sidebarAvg) sidebarAvg.textContent = `${m.averageRatingGiven} ★`;
         if (sidebarLikes) {
-            const likedCount = db.tables.ratings.filter(r => r.user_id === currentUser.id && r.rating_value === 5).length;
+            const likedCount = db.tables.ratings.filter(r => r.user_id === currentUser?.id && r.rating_value === 5).length;
             sidebarLikes.innerHTML = `${likedCount} <i class="fa-solid fa-heart text-danger"></i>`;
         }
     }
@@ -1340,7 +1343,7 @@ function attachFeedActionListeners(container) {
             try {
                 db.insertRow("comments", {
                     review_id: revId,
-                    user_id: currentUser.id,
+                    user_id: currentUser?.id,
                     comment_text: commentText,
                     created_at: new Date().toISOString().split("T")[0]
                 });
@@ -1362,7 +1365,7 @@ function attachFeedActionListeners(container) {
         btn.onclick = (e) => {
             e.preventDefault();
             const authorId = btn.getAttribute("data-author-id");
-            const followerId = currentUser.id;
+            const followerId = currentUser?.id;
 
             const existingIndex = db.tables.followers.findIndex(f => f.follower_user_id === followerId && f.followed_user_id === authorId);
             if (existingIndex !== -1) {
@@ -1440,12 +1443,12 @@ function renderProfileView() {
     if (bioText) bioText.textContent = user.bio;
 
     // Load metrics
-    const statsResult = db.sp_user_analytics(user.id);
+    const statsResult = db.sp_user_analytics(user?.id);
     if (statsResult.status === "Success") {
         const m = statsResult.metrics;
         document.getElementById("profile-watched-count").textContent = m.totalWatched;
         document.getElementById("profile-watchlist-count").textContent = m.watchlistCount;
-        document.getElementById("profile-likes-count").textContent = db.tables.ratings.filter(r => r.user_id === user.id && r.rating_value === 5).length;
+        document.getElementById("profile-likes-count").textContent = db.tables.ratings.filter(r => r.user_id === user?.id && r.rating_value === 5).length;
         document.getElementById("profile-lists-count").textContent = m.customListsCount;
     }
 
@@ -1481,7 +1484,7 @@ function renderProfileSection(section) {
         const tbody = document.getElementById("profile-diary-table-body");
         
         // Relational JOIN of ratings + reviews + movies
-        const userRatings = db.tables.ratings.filter(r => r.user_id === user.id);
+        const userRatings = db.tables.ratings.filter(r => r.user_id === user?.id);
         const sortedLogs = [...userRatings].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
 
         if (sortedLogs.length === 0) {
@@ -1492,7 +1495,7 @@ function renderProfileSection(section) {
                 if (!film) return "";
                 
                 // Check if text review exists
-                const rev = db.tables.reviews.find(r => r.user_id === user.id && r.movie_id === log.movie_id);
+                const rev = db.tables.reviews.find(r => r.user_id === user?.id && r.movie_id === log.movie_id);
                 const reviewText = rev ? rev.review_text : "";
                 const isLiked = log.rating_value === 5; // 5 stars represents liked
 
@@ -1518,7 +1521,7 @@ function renderProfileSection(section) {
                     if (rating && confirm("Remove this entry from your diary?")) {
                         try {
                             // Find corresponding review if exists
-                            const rev = db.tables.reviews.find(r => r.user_id === user.id && r.movie_id === rating.movie_id);
+                            const rev = db.tables.reviews.find(r => r.user_id === user?.id && r.movie_id === rating.movie_id);
                             if (rev) db.deleteRow("reviews", rev.id);
                             
                             db.deleteRow("ratings", ratingId);
@@ -1534,7 +1537,7 @@ function renderProfileSection(section) {
     else if (section === "watchlist") {
         watchlistSec.classList.remove("hidden");
         const grid = document.getElementById("profile-watchlist-grid");
-        const listItems = db.tables.watchlists.filter(w => w.user_id === user.id);
+        const listItems = db.tables.watchlists.filter(w => w.user_id === user?.id);
         const watchlistFilms = db.tables.movies.filter(m => listItems.some(w => w.movie_id === m.id));
 
         if (watchlistFilms.length === 0) {
@@ -1547,7 +1550,7 @@ function renderProfileSection(section) {
         likesSec.classList.remove("hidden");
         const grid = document.getElementById("profile-likes-grid");
         // Liked films are films rated 5 stars
-        const likedIds = db.tables.ratings.filter(r => r.user_id === user.id && r.rating_value === 5).map(r => r.movie_id);
+        const likedIds = db.tables.ratings.filter(r => r.user_id === user?.id && r.rating_value === 5).map(r => r.movie_id);
         const likedFilms = db.tables.movies.filter(m => likedIds.includes(m.id));
 
         if (likedFilms.length === 0) {
@@ -1559,7 +1562,7 @@ function renderProfileSection(section) {
     else if (section === "mylists") {
         mylistsSec.classList.remove("hidden");
         const grid = document.getElementById("profile-mylists-grid");
-        const myLists = db.tables.lists.filter(l => l.user_id === user.id);
+        const myLists = db.tables.lists.filter(l => l.user_id === user?.id);
 
         if (myLists.length === 0) {
             grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-color); padding: 20px;">You haven't created any movie lists yet.</div>`;
@@ -1573,8 +1576,8 @@ function renderProfileSection(section) {
         const followersList = document.getElementById("profile-followers-list");
 
         // Relational joints for following / followers
-        const following = db.tables.followers.filter(f => f.follower_user_id === user.id);
-        const followers = db.tables.followers.filter(f => f.followed_user_id === user.id);
+        const following = db.tables.followers.filter(f => f.follower_user_id === user?.id);
+        const followers = db.tables.followers.filter(f => f.followed_user_id === user?.id);
 
         if (following.length === 0) {
             followingList.innerHTML = `<div style="font-size:13px; color:var(--text-color); font-style:italic;">You aren't following anyone yet.</div>`;
@@ -1622,7 +1625,7 @@ function renderProfileSection(section) {
     else if (section === "notifications") {
         notificationsSec.classList.remove("hidden");
         const list = document.getElementById("profile-notifications-list");
-        const userNotifies = db.tables.notifications.filter(n => n.user_id === user.id);
+        const userNotifies = db.tables.notifications.filter(n => n.user_id === user?.id);
 
         if (userNotifies.length === 0) {
             list.innerHTML = `<div style="text-align: center; color: var(--text-color); padding: 40px;">No notifications yet.</div>`;
@@ -1762,7 +1765,7 @@ function initLogModal() {
         // RUN TRANSACTION: LOG MOVIE
         try {
             // 1. Insert or update Rating
-            const existingRating = db.tables.ratings.find(r => r.user_id === user.id && r.movie_id === movieId);
+            const existingRating = db.tables.ratings.find(r => r.user_id === user?.id && r.movie_id === movieId);
             const finalRating = liked ? 5 : (rating > 0 ? rating : 3); // Liked implies 5 stars
             
             if (existingRating) {
@@ -1770,7 +1773,7 @@ function initLogModal() {
             } else {
                 db.insertRow("ratings", {
                     movie_id: movieId,
-                    user_id: user.id,
+                    user_id: user?.id,
                     rating_value: finalRating,
                     created_at: date
                 });
@@ -1780,7 +1783,7 @@ function initLogModal() {
             if (reviewText) {
                 db.insertRow("reviews", {
                     movie_id: movieId,
-                    user_id: user.id,
+                    user_id: user?.id,
                     review_text: reviewText,
                     created_at: date,
                     likes_count: 0
@@ -1788,11 +1791,11 @@ function initLogModal() {
             }
 
             // 3. Manage Watchlist
-            const wItem = db.tables.watchlists.find(w => w.user_id === user.id && w.movie_id === movieId);
+            const wItem = db.tables.watchlists.find(w => w.user_id === user?.id && w.movie_id === movieId);
             if (watchlist) {
                 if (!wItem) {
                     db.insertRow("watchlists", {
-                        user_id: user.id,
+                        user_id: user?.id,
                         movie_id: movieId,
                         added_at: date
                     });
@@ -1853,19 +1856,19 @@ function initDetailModal() {
         if (!activeDetailFilmId) return;
         
         try {
-            const existingRating = db.tables.ratings.find(r => r.user_id === user.id && r.movie_id === activeDetailFilmId);
+            const existingRating = db.tables.ratings.find(r => r.user_id === user?.id && r.movie_id === activeDetailFilmId);
             if (existingRating) {
                 db.deleteRow("ratings", existingRating.id);
             } else {
                 db.insertRow("ratings", {
                     movie_id: activeDetailFilmId,
-                    user_id: user.id,
+                    user_id: user?.id,
                     rating_value: 4, // Default watched rating
                     created_at: new Date().toISOString().split("T")[0]
                 });
                 
                 // Clear from watchlist
-                const w = db.tables.watchlists.find(wi => wi.user_id === user.id && wi.movie_id === activeDetailFilmId);
+                const w = db.tables.watchlists.find(wi => wi.user_id === user?.id && wi.movie_id === activeDetailFilmId);
                 if (w) db.deleteRow("watchlists", w.id);
             }
             openDetailModal(activeDetailFilmId);
@@ -1880,7 +1883,7 @@ function initDetailModal() {
         const movie = db.tables.movies.find(m => m.id === activeDetailFilmId);
 
         try {
-            const existingRating = db.tables.ratings.find(r => r.user_id === user.id && r.movie_id === activeDetailFilmId);
+            const existingRating = db.tables.ratings.find(r => r.user_id === user?.id && r.movie_id === activeDetailFilmId);
             if (existingRating && existingRating.rating_value === 5) {
                 db.updateRow("ratings", existingRating.id, { rating_value: 4 });
                 if (movie) db.updateRow("movies", movie.id, { likes_count: Math.max(0, movie.likes_count - 1) });
@@ -1890,7 +1893,7 @@ function initDetailModal() {
                 } else {
                     db.insertRow("ratings", {
                         movie_id: activeDetailFilmId,
-                        user_id: user.id,
+                        user_id: user?.id,
                         rating_value: 5,
                         created_at: new Date().toISOString().split("T")[0]
                     });
@@ -1908,18 +1911,18 @@ function initDetailModal() {
         if (!activeDetailFilmId) return;
 
         try {
-            const w = db.tables.watchlists.find(wi => wi.user_id === user.id && wi.movie_id === activeDetailFilmId);
+            const w = db.tables.watchlists.find(wi => wi.user_id === user?.id && wi.movie_id === activeDetailFilmId);
             if (w) {
                 db.deleteRow("watchlists", w.id);
             } else {
                 db.insertRow("watchlists", {
-                    user_id: user.id,
+                    user_id: user?.id,
                     movie_id: activeDetailFilmId,
                     added_at: new Date().toISOString().split("T")[0]
                 });
                 
                 // Clear rating (unwatch) since putting on watchlist
-                const r = db.tables.ratings.find(ri => ri.user_id === user.id && ri.movie_id === activeDetailFilmId);
+                const r = db.tables.ratings.find(ri => ri.user_id === user?.id && ri.movie_id === activeDetailFilmId);
                 if (r) db.deleteRow("ratings", r.id);
             }
             openDetailModal(activeDetailFilmId);
@@ -1967,9 +1970,9 @@ function openDetailModal(filmId) {
     document.getElementById("detail-avg-rating-val").textContent = `${film.avg_rating.toFixed(1)} ★`;
     document.getElementById("detail-likes-count-val").textContent = film.likes_count.toLocaleString();
 
-    const isWatched = db.tables.ratings.some(r => r.user_id === user.id && r.movie_id === filmId);
-    const isLiked = db.tables.ratings.some(r => r.user_id === user.id && r.movie_id === filmId && r.rating_value === 5);
-    const isWatchlisted = db.tables.watchlists.some(w => w.user_id === user.id && w.movie_id === filmId);
+    const isWatched = db.tables.ratings.some(r => r.user_id === user?.id && r.movie_id === filmId);
+    const isLiked = db.tables.ratings.some(r => r.user_id === user?.id && r.movie_id === filmId && r.rating_value === 5);
+    const isWatchlisted = db.tables.watchlists.some(w => w.user_id === user?.id && w.movie_id === filmId);
 
     const watchBtn = document.getElementById("action-watch-btn");
     const likeBtn = document.getElementById("action-like-btn");
@@ -2088,7 +2091,7 @@ function initListModal() {
         // TRANSACTION: CREATE LIST AND MAP JUNCTION TABLE
         try {
             const listRow = db.insertRow("lists", {
-                user_id: user.id,
+                user_id: user?.id,
                 name: listName,
                 description: listDesc,
                 created_at: new Date().toISOString().split("T")[0]
@@ -2127,23 +2130,44 @@ function initSearch() {
             const dir = db.tables.directors.find(d => d.id === movie.director_id);
             const dirName = dir ? dir.name.toLowerCase() : "";
             return movie.title.toLowerCase().includes(query) || dirName.includes(query);
-        });
+        }).slice(0, 5); // limit movie results
 
-        if (matches.length === 0) {
-            searchDropdown.innerHTML = `<div class="search-result-item" style="color: var(--text-color); cursor: default;">No matching films found</div>`;
+        // User Search
+        const userMatches = db.tables.users.filter(u => u.username.toLowerCase().includes(query)).slice(0, 3);
+
+        if (matches.length === 0 && userMatches.length === 0) {
+            searchDropdown.innerHTML = `<div class="search-result-item" style="color: var(--text-color); cursor: default;">No matching films or users found</div>`;
         } else {
-            searchDropdown.innerHTML = matches.map(movie => {
-                const dir = db.tables.directors.find(d => d.id === movie.director_id);
-                return `
-                    <div class="search-result-item" data-id="${movie.id}">
-                        <img class="search-result-poster" src="${movie.poster}" alt="${movie.title}">
+            let html = "";
+            if (userMatches.length > 0) {
+                html += `<div style="padding: 5px 10px; font-size: 12px; color: #889098; background: #1a212d; font-weight: bold; text-transform: uppercase;">Users</div>`;
+                html += userMatches.map(u => `
+                    <div class="search-result-item user-result" data-user-id="${u.id}" style="display: flex; align-items: center;">
+                        <div style="width: 30px; height: 30px; border-radius: 50%; background: #445566; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                            <i class="fa-solid fa-user" style="color: white; font-size: 14px;"></i>
+                        </div>
                         <div class="search-result-info">
-                            <span class="search-result-title">${movie.title}</span>
-                            <span class="search-result-year">${movie.year} &middot; Directed by ${dir ? dir.name : "Unknown"}</span>
+                            <span class="search-result-title">${u.username}</span>
                         </div>
                     </div>
-                `;
-            }).join("");
+                `).join("");
+            }
+            if (matches.length > 0) {
+                html += `<div style="padding: 5px 10px; font-size: 12px; color: #889098; background: #1a212d; font-weight: bold; text-transform: uppercase;">Films</div>`;
+                html += matches.map(movie => {
+                    const dir = db.tables.directors.find(d => d.id === movie.director_id);
+                    return `
+                        <div class="search-result-item" data-id="${movie.id}">
+                            <img class="search-result-poster" src="${movie.poster}" alt="${movie.title}">
+                            <div class="search-result-info">
+                                <span class="search-result-title">${movie.title}</span>
+                                <span class="search-result-year">${movie.year} &middot; Directed by ${dir ? dir.name : "Unknown"}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+            }
+            searchDropdown.innerHTML = html;
         }
 
         searchDropdown.classList.remove("hidden");
@@ -2153,10 +2177,16 @@ function initSearch() {
         const item = e.target.closest(".search-result-item");
         if (item) {
             const filmId = item.getAttribute("data-id");
+            const userId = item.getAttribute("data-user-id");
+            
             if (filmId) {
                 searchInput.value = "";
                 searchDropdown.classList.add("hidden");
                 openDetailModal(filmId);
+            } else if (userId) {
+                searchInput.value = "";
+                searchDropdown.classList.add("hidden");
+                openPublicProfile(userId);
             }
         }
     });
@@ -2502,8 +2532,8 @@ function renderAdminTableBrowser(table) {
 // 15. CARD HTML CONSTRUCTORS & FORMATTING
 function createFilmCardHtml(film) {
     const user = state.getActiveUser();
-    const isLiked = db.tables.ratings.some(r => r.user_id === user.id && r.movie_id === film.id && r.rating_value === 5);
-    const isWatched = db.tables.ratings.some(r => r.user_id === user.id && r.movie_id === film.id);
+    const isLiked = db.tables.ratings.some(r => r.user_id === user?.id && r.movie_id === film.id && r.rating_value === 5);
+    const isWatched = db.tables.ratings.some(r => r.user_id === user?.id && r.movie_id === film.id);
     
     const likeClass = isLiked ? "liked" : "";
     const watchClass = isWatched ? "watched" : "";
@@ -2573,4 +2603,194 @@ function formatDate(dateStr) {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     const dateObj = new Date(dateStr);
     return dateObj.toLocaleDateString('en-US', options);
+}
+
+// ==========================================
+// AUTHENTICATION & USER PROFILES
+// ==========================================
+
+let isSignUpMode = false;
+
+document.addEventListener("DOMContentLoaded", () => {
+    const authModal = document.getElementById("auth-modal");
+    const authClose = document.getElementById("auth-modal-close");
+    const authForm = document.getElementById("auth-form");
+    const toggleLink = document.getElementById("auth-toggle-link");
+    const usernameGroup = document.getElementById("auth-username-group");
+    const usernameInput = document.getElementById("auth-username");
+    const title = document.getElementById("auth-modal-title");
+    const submitBtn = document.getElementById("auth-submit-btn");
+    const errorDiv = document.getElementById("auth-error");
+
+    const profileNavLink = document.getElementById("profile-nav-link");
+
+    // Add Logout Button to Header
+    const headerActions = document.querySelector(".header-actions");
+    if (headerActions) {
+        const logoutBtn = document.createElement("button");
+        logoutBtn.id = "logout-btn";
+        logoutBtn.className = "btn btn-secondary";
+        logoutBtn.style.marginLeft = "10px";
+        logoutBtn.innerHTML = "<i class='fa-solid fa-right-from-bracket'></i> Logout";
+        logoutBtn.style.display = db.activeUserId ? "inline-block" : "none";
+        headerActions.appendChild(logoutBtn);
+
+        logoutBtn.onclick = () => {
+            localStorage.removeItem("activeUserId");
+            db.activeUserId = null;
+            window.location.reload();
+        };
+    }
+
+    // Update Profile Link Text if not logged in
+    if (!db.activeUserId) {
+        profileNavLink.innerHTML = "<i class='fa-solid fa-user'></i> Login";
+    }
+
+    authClose.onclick = () => authModal.classList.add("hidden");
+
+    toggleLink.onclick = (e) => {
+        e.preventDefault();
+        isSignUpMode = !isSignUpMode;
+        if (isSignUpMode) {
+            title.textContent = "Create Account";
+            submitBtn.textContent = "Sign Up";
+            toggleLink.textContent = "Already have an account? Sign In";
+        } else {
+            title.textContent = "Sign In";
+            submitBtn.textContent = "Sign In";
+            toggleLink.textContent = "Need an account? Sign up";
+        }
+        errorDiv.textContent = "";
+    };
+
+    authForm.onsubmit = async (e) => {
+        e.preventDefault();
+        errorDiv.textContent = "";
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Please wait...";
+
+        const endpoint = isSignUpMode ? "http://localhost:8080/api/signup" : "http://localhost:8080/api/login";
+        const payload = {
+            username: document.getElementById("auth-username").value,
+            password: document.getElementById("auth-password").value
+        };
+        if (isSignUpMode) {
+            payload.bio = "New user ready to explore cinema.";
+        }
+
+        try {
+            const res = await db.fetchWithTimeout(endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            }, 90000);
+            const data = await res.json();
+            if (data.error) {
+                errorDiv.textContent = data.error;
+            } else if (data.status === "success") {
+                localStorage.setItem("activeUserId", data.id);
+                db.activeUserId = data.id;
+                
+                // Fetch the new user data if not in db.tables.users
+                if (!db.tables.users.find(u => u.id === data.id)) {
+                    // Try to re-sync users
+                    const usersRes = await db.fetchWithTimeout("http://localhost:8080/api/sql", {
+                        method: "POST",
+                        body: "SELECT * FROM users"
+                    }, 5000);
+                    if (usersRes.ok) {
+                        db.tables.users = await usersRes.json();
+                    }
+                }
+
+                window.location.reload();
+            }
+        } catch (err) {
+            errorDiv.textContent = "Failed to connect to the backend server. Is it running?";
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = isSignUpMode ? "Sign Up" : "Sign In";
+        }
+    };
+
+    // Intercept profile nav click
+    const originalProfileClick = profileNavLink.onclick;
+    profileNavLink.onclick = (e) => {
+        if (!db.activeUserId) {
+            e.preventDefault();
+            authModal.classList.remove("hidden");
+            return;
+        }
+        // If they are logged in, let the original click handle it (which triggers nav changes in app.js)
+        if (typeof originalProfileClick === 'function') {
+            originalProfileClick(e);
+        }
+    };
+
+    // Override the profile tab logic inside app.js which is bound via querySelectorAll('.nav-item')
+    // Actually, app.js binds to all `.nav-item`. We can just check `db.activeUserId` inside `switchTab`
+});
+
+// Update switchTab function intercept
+document.addEventListener("DOMContentLoaded", () => {
+    const pLink = document.getElementById("profile-nav-link");
+    if (pLink) {
+        pLink.addEventListener("click", (e) => {
+            if (!db.activeUserId) {
+                e.stopPropagation(); // Prevent switchTab
+                e.preventDefault();
+                document.getElementById("auth-modal").classList.remove("hidden");
+            }
+        }, true); // Use capture phase to intercept before app.js
+    }
+});
+
+
+function openPublicProfile(userId) {
+    const user = db.tables.users.find(u => u.id === userId);
+    if (!user) return;
+    
+    // We can reuse the profile tab, but we'll need to overwrite it with public data
+    // A quick hack is to just change db.activeUserId temporarily or create a separate modal
+    // Let's create a quick modal for the public profile to keep it clean without messing up the main profile tab
+    let modal = document.getElementById("public-profile-modal");
+    if (!modal) {
+        modal = document.createElement("div");
+        modal.id = "public-profile-modal";
+        modal.className = "modal-overlay";
+        modal.innerHTML = `
+            <div class="modal-container" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h2 id="pp-username"></h2>
+                    <button class="modal-close" onclick="document.getElementById('public-profile-modal').classList.add('hidden')"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body" style="padding: 20px;">
+                    <p id="pp-bio" style="color: #889098; font-style: italic; margin-bottom: 20px;"></p>
+                    <h3>Reviews by <span id="pp-username-span"></span></h3>
+                    <div id="pp-reviews-list" style="margin-top: 15px; max-height: 400px; overflow-y: auto;"></div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    document.getElementById("pp-username").textContent = user.username + "'s Profile";
+    document.getElementById("pp-username-span").textContent = user.username;
+    document.getElementById("pp-bio").textContent = user.bio || "No bio available.";
+    
+    const userReviews = db.tables.reviews.filter(r => r.user_id === userId);
+    const reviewsHtml = userReviews.map(r => {
+        const movie = db.tables.movies.find(m => m.id === r.movie_id);
+        return `
+            <div style="background: #1a212d; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #2c3440;">
+                <h4 style="margin: 0 0 5px 0; color: white;">${movie ? movie.title : "Unknown Movie"}</h4>
+                <p style="margin: 0; color: #b0b8c0; font-size: 14px;">${r.review_text}</p>
+                <div style="margin-top: 10px; font-size: 12px; color: #889098;">${r.created_at} &middot; ${r.likes_count} likes</div>
+            </div>
+        `;
+    }).join("");
+    
+    document.getElementById("pp-reviews-list").innerHTML = reviewsHtml || "<p>No reviews yet.</p>";
+    modal.classList.remove("hidden");
 }
