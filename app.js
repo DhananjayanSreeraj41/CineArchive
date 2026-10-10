@@ -179,7 +179,7 @@ class CineArchiveDB {
         };
         this.logs = [];
         this.activeRole = "admin"; // Default view role
-        this.activeUserId = "u1"; // CinephileExplorer session user
+        this.activeUserId = localStorage.getItem("activeUserId") || null; // Session user
         // this.init() is now called asynchronously
     }
 
@@ -2127,23 +2127,44 @@ function initSearch() {
             const dir = db.tables.directors.find(d => d.id === movie.director_id);
             const dirName = dir ? dir.name.toLowerCase() : "";
             return movie.title.toLowerCase().includes(query) || dirName.includes(query);
-        });
+        }).slice(0, 5); // limit movie results
 
-        if (matches.length === 0) {
-            searchDropdown.innerHTML = `<div class="search-result-item" style="color: var(--text-color); cursor: default;">No matching films found</div>`;
+        // User Search
+        const userMatches = db.tables.users.filter(u => u.username.toLowerCase().includes(query)).slice(0, 3);
+
+        if (matches.length === 0 && userMatches.length === 0) {
+            searchDropdown.innerHTML = `<div class="search-result-item" style="color: var(--text-color); cursor: default;">No matching films or users found</div>`;
         } else {
-            searchDropdown.innerHTML = matches.map(movie => {
-                const dir = db.tables.directors.find(d => d.id === movie.director_id);
-                return `
-                    <div class="search-result-item" data-id="${movie.id}">
-                        <img class="search-result-poster" src="${movie.poster}" alt="${movie.title}">
+            let html = "";
+            if (userMatches.length > 0) {
+                html += `<div style="padding: 5px 10px; font-size: 12px; color: #889098; background: #1a212d; font-weight: bold; text-transform: uppercase;">Users</div>`;
+                html += userMatches.map(u => `
+                    <div class="search-result-item user-result" data-user-id="${u.id}" style="display: flex; align-items: center;">
+                        <div style="width: 30px; height: 30px; border-radius: 50%; background: #445566; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                            <i class="fa-solid fa-user" style="color: white; font-size: 14px;"></i>
+                        </div>
                         <div class="search-result-info">
-                            <span class="search-result-title">${movie.title}</span>
-                            <span class="search-result-year">${movie.year} &middot; Directed by ${dir ? dir.name : "Unknown"}</span>
+                            <span class="search-result-title">${u.username}</span>
                         </div>
                     </div>
-                `;
-            }).join("");
+                `).join("");
+            }
+            if (matches.length > 0) {
+                html += `<div style="padding: 5px 10px; font-size: 12px; color: #889098; background: #1a212d; font-weight: bold; text-transform: uppercase;">Films</div>`;
+                html += matches.map(movie => {
+                    const dir = db.tables.directors.find(d => d.id === movie.director_id);
+                    return `
+                        <div class="search-result-item" data-id="${movie.id}">
+                            <img class="search-result-poster" src="${movie.poster}" alt="${movie.title}">
+                            <div class="search-result-info">
+                                <span class="search-result-title">${movie.title}</span>
+                                <span class="search-result-year">${movie.year} &middot; Directed by ${dir ? dir.name : "Unknown"}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+            }
+            searchDropdown.innerHTML = html;
         }
 
         searchDropdown.classList.remove("hidden");
@@ -2153,10 +2174,16 @@ function initSearch() {
         const item = e.target.closest(".search-result-item");
         if (item) {
             const filmId = item.getAttribute("data-id");
+            const userId = item.getAttribute("data-user-id");
+            
             if (filmId) {
                 searchInput.value = "";
                 searchDropdown.classList.add("hidden");
                 openDetailModal(filmId);
+            } else if (userId) {
+                searchInput.value = "";
+                searchDropdown.classList.add("hidden");
+                openPublicProfile(userId);
             }
         }
     });
@@ -2573,4 +2600,197 @@ function formatDate(dateStr) {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     const dateObj = new Date(dateStr);
     return dateObj.toLocaleDateString('en-US', options);
+}
+
+// ==========================================
+// AUTHENTICATION & USER PROFILES
+// ==========================================
+
+let isSignUpMode = false;
+
+document.addEventListener("DOMContentLoaded", () => {
+    const authModal = document.getElementById("auth-modal");
+    const authClose = document.getElementById("auth-modal-close");
+    const authForm = document.getElementById("auth-form");
+    const toggleLink = document.getElementById("auth-toggle-link");
+    const usernameGroup = document.getElementById("auth-username-group");
+    const usernameInput = document.getElementById("auth-username");
+    const title = document.getElementById("auth-modal-title");
+    const submitBtn = document.getElementById("auth-submit-btn");
+    const errorDiv = document.getElementById("auth-error");
+
+    const profileNavLink = document.getElementById("profile-nav-link");
+
+    // Add Logout Button to Header
+    const headerActions = document.querySelector(".header-actions");
+    if (headerActions) {
+        const logoutBtn = document.createElement("button");
+        logoutBtn.id = "logout-btn";
+        logoutBtn.className = "btn btn-secondary";
+        logoutBtn.style.marginLeft = "10px";
+        logoutBtn.innerHTML = "<i class='fa-solid fa-right-from-bracket'></i> Logout";
+        logoutBtn.style.display = db.activeUserId ? "inline-block" : "none";
+        headerActions.appendChild(logoutBtn);
+
+        logoutBtn.onclick = () => {
+            localStorage.removeItem("activeUserId");
+            db.activeUserId = null;
+            window.location.reload();
+        };
+    }
+
+    // Update Profile Link Text if not logged in
+    if (!db.activeUserId) {
+        profileNavLink.innerHTML = "<i class='fa-solid fa-user'></i> Login";
+    }
+
+    authClose.onclick = () => authModal.classList.add("hidden");
+
+    toggleLink.onclick = (e) => {
+        e.preventDefault();
+        isSignUpMode = !isSignUpMode;
+        if (isSignUpMode) {
+            title.textContent = "Create Account";
+            submitBtn.textContent = "Sign Up";
+            toggleLink.textContent = "Already have an account? Sign In";
+            usernameGroup.style.display = "block";
+            usernameInput.required = true;
+        } else {
+            title.textContent = "Sign In";
+            submitBtn.textContent = "Sign In";
+            toggleLink.textContent = "Need an account? Sign up";
+            usernameGroup.style.display = "none";
+            usernameInput.required = false;
+        }
+        errorDiv.textContent = "";
+    };
+
+    authForm.onsubmit = async (e) => {
+        e.preventDefault();
+        errorDiv.textContent = "";
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Please wait...";
+
+        const endpoint = isSignUpMode ? "http://localhost:8080/api/signup" : "http://localhost:8080/api/login";
+        const payload = {
+            email: document.getElementById("auth-email").value,
+            password: document.getElementById("auth-password").value
+        };
+        if (isSignUpMode) {
+            payload.username = usernameInput.value;
+            payload.bio = "New user ready to explore cinema.";
+        }
+
+        try {
+            const res = await fetch(endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.error) {
+                errorDiv.textContent = data.error;
+            } else if (data.status === "success") {
+                localStorage.setItem("activeUserId", data.id);
+                db.activeUserId = data.id;
+                
+                // Fetch the new user data if not in db.tables.users
+                if (!db.tables.users.find(u => u.id === data.id)) {
+                    // Try to re-sync users
+                    const usersRes = await fetch("http://localhost:8080/api/sql", {
+                        method: "POST",
+                        body: "SELECT * FROM users"
+                    });
+                    if (usersRes.ok) {
+                        db.tables.users = await usersRes.json();
+                    }
+                }
+
+                window.location.reload();
+            }
+        } catch (err) {
+            errorDiv.textContent = "Failed to connect to the backend server. Is it running?";
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = isSignUpMode ? "Sign Up" : "Sign In";
+        }
+    };
+
+    // Intercept profile nav click
+    const originalProfileClick = profileNavLink.onclick;
+    profileNavLink.onclick = (e) => {
+        if (!db.activeUserId) {
+            e.preventDefault();
+            authModal.classList.remove("hidden");
+            return;
+        }
+        // If they are logged in, let the original click handle it (which triggers nav changes in app.js)
+        if (typeof originalProfileClick === 'function') {
+            originalProfileClick(e);
+        }
+    };
+
+    // Override the profile tab logic inside app.js which is bound via querySelectorAll('.nav-item')
+    // Actually, app.js binds to all `.nav-item`. We can just check `db.activeUserId` inside `switchTab`
+});
+
+// Update switchTab function intercept
+const originalSwitchTab = window.switchTab; // It is not global, it's inside DOMContentLoaded in app.js
+// Wait, `switchTab` isn't global. So we will intercept the click on profile link directly and stop propagation if not logged in.
+profileNavLink = document.getElementById("profile-nav-link"); // already have it
+profileNavLink.addEventListener("click", (e) => {
+    if (!db.activeUserId) {
+        e.stopPropagation(); // Prevent switchTab
+        e.preventDefault();
+        document.getElementById("auth-modal").classList.remove("hidden");
+    }
+}, true); // Use capture phase to intercept before app.js
+
+
+function openPublicProfile(userId) {
+    const user = db.tables.users.find(u => u.id === userId);
+    if (!user) return;
+    
+    // We can reuse the profile tab, but we'll need to overwrite it with public data
+    // A quick hack is to just change db.activeUserId temporarily or create a separate modal
+    // Let's create a quick modal for the public profile to keep it clean without messing up the main profile tab
+    let modal = document.getElementById("public-profile-modal");
+    if (!modal) {
+        modal = document.createElement("div");
+        modal.id = "public-profile-modal";
+        modal.className = "modal-overlay";
+        modal.innerHTML = `
+            <div class="modal-container" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h2 id="pp-username"></h2>
+                    <button class="modal-close" onclick="document.getElementById('public-profile-modal').classList.add('hidden')"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-body" style="padding: 20px;">
+                    <p id="pp-bio" style="color: #889098; font-style: italic; margin-bottom: 20px;"></p>
+                    <h3>Reviews by <span id="pp-username-span"></span></h3>
+                    <div id="pp-reviews-list" style="margin-top: 15px; max-height: 400px; overflow-y: auto;"></div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    document.getElementById("pp-username").textContent = user.username + "'s Profile";
+    document.getElementById("pp-username-span").textContent = user.username;
+    document.getElementById("pp-bio").textContent = user.bio || "No bio available.";
+    
+    const userReviews = db.tables.reviews.filter(r => r.user_id === userId);
+    const reviewsHtml = userReviews.map(r => {
+        const movie = db.tables.movies.find(m => m.id === r.movie_id);
+        return `
+            <div style="background: #1a212d; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #2c3440;">
+                <h4 style="margin: 0 0 5px 0; color: white;">${movie ? movie.title : "Unknown Movie"}</h4>
+                <p style="margin: 0; color: #b0b8c0; font-size: 14px;">${r.review_text}</p>
+                <div style="margin-top: 10px; font-size: 12px; color: #889098;">${r.created_at} &middot; ${r.likes_count} likes</div>
+            </div>
+        `;
+    }).join("");
+    
+    document.getElementById("pp-reviews-list").innerHTML = reviewsHtml || "<p>No reviews yet.</p>";
+    modal.classList.remove("hidden");
 }
