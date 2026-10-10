@@ -996,7 +996,7 @@ function initApp() {
 // Refresh notification indicator
 function updateUnreadNotifyCount() {
     const user = state.getActiveUser();
-    const unreads = db.tables.notifications.filter(n => n.user_id === user.id && !n.is_read).length;
+    const unreads = db.tables.notifications.filter(n => n.user_id === user?.id && !n.is_read).length;
     const badge = document.getElementById("profile-notify-badge");
     if (badge) {
         badge.textContent = unreads;
@@ -1036,8 +1036,8 @@ function updateGlobalStats() {
     const user = state.getActiveUser();
     if (!user) return; // Safeguard if DB is empty
     
-    const watchedCount = db.tables.ratings.filter(r => r.user_id === user.id).length;
-    const reviewCount = db.tables.reviews.filter(r => r.user_id === user.id && r.review_text.trim() !== "").length;
+    const watchedCount = db.tables.ratings.filter(r => r.user_id === user?.id).length;
+    const reviewCount = db.tables.reviews.filter(r => r.user_id === user?.id && r.review_text.trim() !== "").length;
     const awardsCount = db.tables.awards.length;
 
     const totalFilmsEl = document.getElementById("stat-total-films");
@@ -1235,10 +1235,10 @@ function renderReviewsFeed() {
             const author = db.tables.users.find(u => u.id === rev.user_id);
             if (!film || !author) return "";
 
-            const isUserReview = rev.user_id === currentUser.id;
+            const isUserReview = rev.user_id === currentUser?.id;
             
             // Check follow relation
-            const isFollowingAuthor = db.tables.followers.some(f => f.follower_user_id === currentUser.id && f.followed_user_id === author.id);
+            const isFollowingAuthor = db.tables.followers.some(f => f.follower_user_id === currentUser?.id && f.followed_user_id === author.id);
             const followBtnHtml = isUserReview ? "" : `
                 <button class="connection-action-btn follow-feed-btn ${isFollowingAuthor ? "unfollow" : ""}" data-author-id="${author.id}">
                     ${isFollowingAuthor ? "Unfollow" : "Follow"}
@@ -1298,13 +1298,13 @@ function renderReviewsFeed() {
     }
 
     // Sidebar aggregate values (User profile metrics)
-    const statsResult = db.sp_user_analytics(currentUser.id);
+    const statsResult = db.sp_user_analytics(currentUser?.id);
     if (statsResult.status === "Success") {
         const m = statsResult.metrics;
         if (sidebarReviewed) sidebarReviewed.textContent = m.totalWatched;
         if (sidebarAvg) sidebarAvg.textContent = `${m.averageRatingGiven} ★`;
         if (sidebarLikes) {
-            const likedCount = db.tables.ratings.filter(r => r.user_id === currentUser.id && r.rating_value === 5).length;
+            const likedCount = db.tables.ratings.filter(r => r.user_id === currentUser?.id && r.rating_value === 5).length;
             sidebarLikes.innerHTML = `${likedCount} <i class="fa-solid fa-heart text-danger"></i>`;
         }
     }
@@ -1340,7 +1340,7 @@ function attachFeedActionListeners(container) {
             try {
                 db.insertRow("comments", {
                     review_id: revId,
-                    user_id: currentUser.id,
+                    user_id: currentUser?.id,
                     comment_text: commentText,
                     created_at: new Date().toISOString().split("T")[0]
                 });
@@ -1362,7 +1362,7 @@ function attachFeedActionListeners(container) {
         btn.onclick = (e) => {
             e.preventDefault();
             const authorId = btn.getAttribute("data-author-id");
-            const followerId = currentUser.id;
+            const followerId = currentUser?.id;
 
             const existingIndex = db.tables.followers.findIndex(f => f.follower_user_id === followerId && f.followed_user_id === authorId);
             if (existingIndex !== -1) {
@@ -1440,12 +1440,12 @@ function renderProfileView() {
     if (bioText) bioText.textContent = user.bio;
 
     // Load metrics
-    const statsResult = db.sp_user_analytics(user.id);
+    const statsResult = db.sp_user_analytics(user?.id);
     if (statsResult.status === "Success") {
         const m = statsResult.metrics;
         document.getElementById("profile-watched-count").textContent = m.totalWatched;
         document.getElementById("profile-watchlist-count").textContent = m.watchlistCount;
-        document.getElementById("profile-likes-count").textContent = db.tables.ratings.filter(r => r.user_id === user.id && r.rating_value === 5).length;
+        document.getElementById("profile-likes-count").textContent = db.tables.ratings.filter(r => r.user_id === user?.id && r.rating_value === 5).length;
         document.getElementById("profile-lists-count").textContent = m.customListsCount;
     }
 
@@ -1481,7 +1481,7 @@ function renderProfileSection(section) {
         const tbody = document.getElementById("profile-diary-table-body");
         
         // Relational JOIN of ratings + reviews + movies
-        const userRatings = db.tables.ratings.filter(r => r.user_id === user.id);
+        const userRatings = db.tables.ratings.filter(r => r.user_id === user?.id);
         const sortedLogs = [...userRatings].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
 
         if (sortedLogs.length === 0) {
@@ -1492,7 +1492,7 @@ function renderProfileSection(section) {
                 if (!film) return "";
                 
                 // Check if text review exists
-                const rev = db.tables.reviews.find(r => r.user_id === user.id && r.movie_id === log.movie_id);
+                const rev = db.tables.reviews.find(r => r.user_id === user?.id && r.movie_id === log.movie_id);
                 const reviewText = rev ? rev.review_text : "";
                 const isLiked = log.rating_value === 5; // 5 stars represents liked
 
@@ -1518,7 +1518,7 @@ function renderProfileSection(section) {
                     if (rating && confirm("Remove this entry from your diary?")) {
                         try {
                             // Find corresponding review if exists
-                            const rev = db.tables.reviews.find(r => r.user_id === user.id && r.movie_id === rating.movie_id);
+                            const rev = db.tables.reviews.find(r => r.user_id === user?.id && r.movie_id === rating.movie_id);
                             if (rev) db.deleteRow("reviews", rev.id);
                             
                             db.deleteRow("ratings", ratingId);
@@ -1534,7 +1534,7 @@ function renderProfileSection(section) {
     else if (section === "watchlist") {
         watchlistSec.classList.remove("hidden");
         const grid = document.getElementById("profile-watchlist-grid");
-        const listItems = db.tables.watchlists.filter(w => w.user_id === user.id);
+        const listItems = db.tables.watchlists.filter(w => w.user_id === user?.id);
         const watchlistFilms = db.tables.movies.filter(m => listItems.some(w => w.movie_id === m.id));
 
         if (watchlistFilms.length === 0) {
@@ -1547,7 +1547,7 @@ function renderProfileSection(section) {
         likesSec.classList.remove("hidden");
         const grid = document.getElementById("profile-likes-grid");
         // Liked films are films rated 5 stars
-        const likedIds = db.tables.ratings.filter(r => r.user_id === user.id && r.rating_value === 5).map(r => r.movie_id);
+        const likedIds = db.tables.ratings.filter(r => r.user_id === user?.id && r.rating_value === 5).map(r => r.movie_id);
         const likedFilms = db.tables.movies.filter(m => likedIds.includes(m.id));
 
         if (likedFilms.length === 0) {
@@ -1559,7 +1559,7 @@ function renderProfileSection(section) {
     else if (section === "mylists") {
         mylistsSec.classList.remove("hidden");
         const grid = document.getElementById("profile-mylists-grid");
-        const myLists = db.tables.lists.filter(l => l.user_id === user.id);
+        const myLists = db.tables.lists.filter(l => l.user_id === user?.id);
 
         if (myLists.length === 0) {
             grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-color); padding: 20px;">You haven't created any movie lists yet.</div>`;
@@ -1573,8 +1573,8 @@ function renderProfileSection(section) {
         const followersList = document.getElementById("profile-followers-list");
 
         // Relational joints for following / followers
-        const following = db.tables.followers.filter(f => f.follower_user_id === user.id);
-        const followers = db.tables.followers.filter(f => f.followed_user_id === user.id);
+        const following = db.tables.followers.filter(f => f.follower_user_id === user?.id);
+        const followers = db.tables.followers.filter(f => f.followed_user_id === user?.id);
 
         if (following.length === 0) {
             followingList.innerHTML = `<div style="font-size:13px; color:var(--text-color); font-style:italic;">You aren't following anyone yet.</div>`;
@@ -1622,7 +1622,7 @@ function renderProfileSection(section) {
     else if (section === "notifications") {
         notificationsSec.classList.remove("hidden");
         const list = document.getElementById("profile-notifications-list");
-        const userNotifies = db.tables.notifications.filter(n => n.user_id === user.id);
+        const userNotifies = db.tables.notifications.filter(n => n.user_id === user?.id);
 
         if (userNotifies.length === 0) {
             list.innerHTML = `<div style="text-align: center; color: var(--text-color); padding: 40px;">No notifications yet.</div>`;
@@ -1762,7 +1762,7 @@ function initLogModal() {
         // RUN TRANSACTION: LOG MOVIE
         try {
             // 1. Insert or update Rating
-            const existingRating = db.tables.ratings.find(r => r.user_id === user.id && r.movie_id === movieId);
+            const existingRating = db.tables.ratings.find(r => r.user_id === user?.id && r.movie_id === movieId);
             const finalRating = liked ? 5 : (rating > 0 ? rating : 3); // Liked implies 5 stars
             
             if (existingRating) {
@@ -1770,7 +1770,7 @@ function initLogModal() {
             } else {
                 db.insertRow("ratings", {
                     movie_id: movieId,
-                    user_id: user.id,
+                    user_id: user?.id,
                     rating_value: finalRating,
                     created_at: date
                 });
@@ -1780,7 +1780,7 @@ function initLogModal() {
             if (reviewText) {
                 db.insertRow("reviews", {
                     movie_id: movieId,
-                    user_id: user.id,
+                    user_id: user?.id,
                     review_text: reviewText,
                     created_at: date,
                     likes_count: 0
@@ -1788,11 +1788,11 @@ function initLogModal() {
             }
 
             // 3. Manage Watchlist
-            const wItem = db.tables.watchlists.find(w => w.user_id === user.id && w.movie_id === movieId);
+            const wItem = db.tables.watchlists.find(w => w.user_id === user?.id && w.movie_id === movieId);
             if (watchlist) {
                 if (!wItem) {
                     db.insertRow("watchlists", {
-                        user_id: user.id,
+                        user_id: user?.id,
                         movie_id: movieId,
                         added_at: date
                     });
@@ -1853,19 +1853,19 @@ function initDetailModal() {
         if (!activeDetailFilmId) return;
         
         try {
-            const existingRating = db.tables.ratings.find(r => r.user_id === user.id && r.movie_id === activeDetailFilmId);
+            const existingRating = db.tables.ratings.find(r => r.user_id === user?.id && r.movie_id === activeDetailFilmId);
             if (existingRating) {
                 db.deleteRow("ratings", existingRating.id);
             } else {
                 db.insertRow("ratings", {
                     movie_id: activeDetailFilmId,
-                    user_id: user.id,
+                    user_id: user?.id,
                     rating_value: 4, // Default watched rating
                     created_at: new Date().toISOString().split("T")[0]
                 });
                 
                 // Clear from watchlist
-                const w = db.tables.watchlists.find(wi => wi.user_id === user.id && wi.movie_id === activeDetailFilmId);
+                const w = db.tables.watchlists.find(wi => wi.user_id === user?.id && wi.movie_id === activeDetailFilmId);
                 if (w) db.deleteRow("watchlists", w.id);
             }
             openDetailModal(activeDetailFilmId);
@@ -1880,7 +1880,7 @@ function initDetailModal() {
         const movie = db.tables.movies.find(m => m.id === activeDetailFilmId);
 
         try {
-            const existingRating = db.tables.ratings.find(r => r.user_id === user.id && r.movie_id === activeDetailFilmId);
+            const existingRating = db.tables.ratings.find(r => r.user_id === user?.id && r.movie_id === activeDetailFilmId);
             if (existingRating && existingRating.rating_value === 5) {
                 db.updateRow("ratings", existingRating.id, { rating_value: 4 });
                 if (movie) db.updateRow("movies", movie.id, { likes_count: Math.max(0, movie.likes_count - 1) });
@@ -1890,7 +1890,7 @@ function initDetailModal() {
                 } else {
                     db.insertRow("ratings", {
                         movie_id: activeDetailFilmId,
-                        user_id: user.id,
+                        user_id: user?.id,
                         rating_value: 5,
                         created_at: new Date().toISOString().split("T")[0]
                     });
@@ -1908,18 +1908,18 @@ function initDetailModal() {
         if (!activeDetailFilmId) return;
 
         try {
-            const w = db.tables.watchlists.find(wi => wi.user_id === user.id && wi.movie_id === activeDetailFilmId);
+            const w = db.tables.watchlists.find(wi => wi.user_id === user?.id && wi.movie_id === activeDetailFilmId);
             if (w) {
                 db.deleteRow("watchlists", w.id);
             } else {
                 db.insertRow("watchlists", {
-                    user_id: user.id,
+                    user_id: user?.id,
                     movie_id: activeDetailFilmId,
                     added_at: new Date().toISOString().split("T")[0]
                 });
                 
                 // Clear rating (unwatch) since putting on watchlist
-                const r = db.tables.ratings.find(ri => ri.user_id === user.id && ri.movie_id === activeDetailFilmId);
+                const r = db.tables.ratings.find(ri => ri.user_id === user?.id && ri.movie_id === activeDetailFilmId);
                 if (r) db.deleteRow("ratings", r.id);
             }
             openDetailModal(activeDetailFilmId);
@@ -1967,9 +1967,9 @@ function openDetailModal(filmId) {
     document.getElementById("detail-avg-rating-val").textContent = `${film.avg_rating.toFixed(1)} ★`;
     document.getElementById("detail-likes-count-val").textContent = film.likes_count.toLocaleString();
 
-    const isWatched = db.tables.ratings.some(r => r.user_id === user.id && r.movie_id === filmId);
-    const isLiked = db.tables.ratings.some(r => r.user_id === user.id && r.movie_id === filmId && r.rating_value === 5);
-    const isWatchlisted = db.tables.watchlists.some(w => w.user_id === user.id && w.movie_id === filmId);
+    const isWatched = db.tables.ratings.some(r => r.user_id === user?.id && r.movie_id === filmId);
+    const isLiked = db.tables.ratings.some(r => r.user_id === user?.id && r.movie_id === filmId && r.rating_value === 5);
+    const isWatchlisted = db.tables.watchlists.some(w => w.user_id === user?.id && w.movie_id === filmId);
 
     const watchBtn = document.getElementById("action-watch-btn");
     const likeBtn = document.getElementById("action-like-btn");
@@ -2088,7 +2088,7 @@ function initListModal() {
         // TRANSACTION: CREATE LIST AND MAP JUNCTION TABLE
         try {
             const listRow = db.insertRow("lists", {
-                user_id: user.id,
+                user_id: user?.id,
                 name: listName,
                 description: listDesc,
                 created_at: new Date().toISOString().split("T")[0]
@@ -2529,8 +2529,8 @@ function renderAdminTableBrowser(table) {
 // 15. CARD HTML CONSTRUCTORS & FORMATTING
 function createFilmCardHtml(film) {
     const user = state.getActiveUser();
-    const isLiked = db.tables.ratings.some(r => r.user_id === user.id && r.movie_id === film.id && r.rating_value === 5);
-    const isWatched = db.tables.ratings.some(r => r.user_id === user.id && r.movie_id === film.id);
+    const isLiked = db.tables.ratings.some(r => r.user_id === user?.id && r.movie_id === film.id && r.rating_value === 5);
+    const isWatched = db.tables.ratings.some(r => r.user_id === user?.id && r.movie_id === film.id);
     
     const likeClass = isLiked ? "liked" : "";
     const watchClass = isWatched ? "watched" : "";
