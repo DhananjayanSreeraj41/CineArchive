@@ -211,13 +211,16 @@ class CineArchiveDB {
                         this.tables[table] = data;
                     } else {
                         success = false;
+                        break;
                     }
                 } else {
                     success = false;
+                    break;
                 }
             } catch (err) {
                 console.error(`Error loading table ${table}:`, err);
                 success = false;
+                break;
             }
         }
         
@@ -2677,11 +2680,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            const res = await fetch(endpoint, {
+            const res = await db.fetchWithTimeout(endpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
-            });
+            }, 30000);
             const data = await res.json();
             if (data.error) {
                 errorDiv.textContent = data.error;
@@ -2692,10 +2695,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Fetch the new user data if not in db.tables.users
                 if (!db.tables.users.find(u => u.id === data.id)) {
                     // Try to re-sync users
-                    const usersRes = await fetch("http://localhost:8080/api/sql", {
+                    const usersRes = await db.fetchWithTimeout("http://localhost:8080/api/sql", {
                         method: "POST",
                         body: "SELECT * FROM users"
-                    });
+                    }, 5000);
                     if (usersRes.ok) {
                         db.tables.users = await usersRes.json();
                     }
