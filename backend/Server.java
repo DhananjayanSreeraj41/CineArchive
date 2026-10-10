@@ -49,11 +49,11 @@ public class Server {
     }
 
     private static Connection getDBConnection() throws Exception {
-        String url = "jdbc:postgresql://dpg-db54c7ajnfac7396rhag-a.singapore-postgres.render.com:5432/cine_archive?sslmode=require";
+        String url = "jdbc:postgresql://dpg-db54c7ajnfac7396rhag-a.singapore-postgres.render.com:5432/cine_archive?sslmode=require&loginTimeout=5";
         String user = "cine_man";
         String pass = "U1QfHtPVsMk2AbHUEi3NqpxZL7V6gWsc";
         
-        int maxRetries = 6;
+        int maxRetries = 12;
         int delayMs = 5000;
         
         for (int i = 0; i < maxRetries; i++) {
@@ -63,7 +63,7 @@ public class Server {
                 if (i == maxRetries - 1) {
                     throw e; // throw on last attempt
                 }
-                System.out.println("Connection failed, retrying in " + (delayMs/1000) + "s... (Attempt " + (i+1) + " of " + maxRetries + ")");
+                System.out.println("Error: " + e.getMessage() + " | Connection failed, retrying in " + (delayMs/1000) + "s... (Attempt " + (i+1) + " of " + maxRetries + ")");
                 Thread.sleep(delayMs);
             }
         }
