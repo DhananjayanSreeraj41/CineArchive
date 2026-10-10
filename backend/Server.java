@@ -48,6 +48,28 @@ public class Server {
         t.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
     }
 
+    private static Connection getDBConnection() throws Exception {
+        String url = "jdbc:postgresql://dpg-db54c7ajnfac7396rhag-a.singapore-postgres.render.com:5432/cine_archive?sslmode=require";
+        String user = "cine_man";
+        String pass = "U1QfHtPVsMk2AbHUEi3NqpxZL7V6gWsc";
+        
+        int maxRetries = 6;
+        int delayMs = 5000;
+        
+        for (int i = 0; i < maxRetries; i++) {
+            try {
+                return DriverManager.getConnection(url, user, pass);
+            } catch (Exception e) {
+                if (i == maxRetries - 1) {
+                    throw e; // throw on last attempt
+                }
+                System.out.println("Connection failed, retrying in " + (delayMs/1000) + "s... (Attempt " + (i+1) + " of " + maxRetries + ")");
+                Thread.sleep(delayMs);
+            }
+        }
+        return null;
+    }
+
     static class SignupHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange t) throws IOException {
@@ -70,7 +92,7 @@ public class Server {
                 String hash = hashPassword(password);
                 String id = "u" + UUID.randomUUID().toString().substring(0, 8);
 
-                Connection conn = DriverManager.getConnection("jdbc:postgresql://dpg-db54c7ajnfac7396rhag-a.singapore-postgres.render.com:5432/cine_archive?sslmode=require", "cine_man", "U1QfHtPVsMk2AbHUEi3NqpxZL7V6gWsc");
+                Connection conn = getDBConnection();
                 PreparedStatement stmt = conn.prepareStatement("INSERT INTO users (id, username, email, password_hash, role, joined_date, bio) VALUES (?, ?, ?, ?, 'User', CURRENT_DATE, 'New user.')");
                 stmt.setString(1, id);
                 stmt.setString(2, username);
@@ -115,7 +137,7 @@ public class Server {
 
                 String hash = hashPassword(password);
 
-                Connection conn = DriverManager.getConnection("jdbc:postgresql://dpg-db54c7ajnfac7396rhag-a.singapore-postgres.render.com:5432/cine_archive?sslmode=require", "cine_man", "U1QfHtPVsMk2AbHUEi3NqpxZL7V6gWsc");
+                Connection conn = getDBConnection();
                 PreparedStatement stmt = conn.prepareStatement("SELECT id, username, email, role, bio FROM users WHERE username = ? AND password_hash = ?");
                 stmt.setString(1, username);
                 stmt.setString(2, hash);
@@ -162,7 +184,7 @@ public class Server {
                 Scanner scanner = new Scanner(is).useDelimiter("\\A");
                 String sql = scanner.hasNext() ? scanner.next() : "";
                 
-                Connection conn = DriverManager.getConnection("jdbc:postgresql://dpg-db54c7ajnfac7396rhag-a.singapore-postgres.render.com:5432/cine_archive?sslmode=require", "cine_man", "U1QfHtPVsMk2AbHUEi3NqpxZL7V6gWsc");
+                Connection conn = getDBConnection();
                 Statement stmt = conn.createStatement();
                 
                 String responseStr;

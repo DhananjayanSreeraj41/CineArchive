@@ -2684,7 +2684,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
-            }, 30000);
+            }, 45000);
             const data = await res.json();
             if (data.error) {
                 errorDiv.textContent = data.error;
