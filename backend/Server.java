@@ -12,22 +12,145 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
 import java.util.Scanner;
+import java.security.MessageDigest;
+import java.util.UUID;
 
 public class Server {
     public static void main(String[] args) throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
         server.createContext("/api/sql", new SqlHandler());
+        server.createContext("/api/signup", new SignupHandler());
+        server.createContext("/api/login", new LoginHandler());
         server.setExecutor(null);
         System.out.println("Java Database Server started on port 8080...");
         server.start();
     }
 
+    private static String hashPassword(String password) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(password.getBytes("UTF-8"));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private static void setCorsHeaders(HttpExchange t) {
+        t.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+        t.getResponseHeaders().add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+        t.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
+    }
+
+    static class SignupHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange t) throws IOException {
+            setCorsHeaders(t);
+            if (t.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
+                t.sendResponseHeaders(204, -1);
+                return;
+            }
+            try {
+                InputStream is = t.getRequestBody();
+                Scanner scanner = new Scanner(is).useDelimiter("\\A");
+                String body = scanner.hasNext() ? scanner.next() : "";
+                
+                String username = body.contains("\"username\":\"") ? body.split("\"username\":\"")[1].split("\"")[0] : "";
+                String password = body.contains("\"password\":\"") ? body.split("\"password\":\"")[1].split("\"")[0] : "";
+                
+                // Provide a dummy email if not provided since DB schema requires it
+                String email = username.toLowerCase() + "@cinearchive.org";
+
+                String hash = hashPassword(password);
+                String id = "u" + UUID.randomUUID().toString().substring(0, 8);
+
+                Connection conn = DriverManager.getConnection("jdbc:postgresql://dpg-db54c7ajnfac7396rhag-a.singapore-postgres.render.com:5432/cine_archive?sslmode=require", "cine_man", "U1QfHtPVsMk2AbHUEi3NqpxZL7V6gWsc");
+                PreparedStatement stmt = conn.prepareStatement("INSERT INTO users (id, username, email, password_hash, role, joined_date, bio) VALUES (?, ?, ?, ?, 'User', CURRENT_DATE, 'New user.')");
+                stmt.setString(1, id);
+                stmt.setString(2, username);
+                stmt.setString(3, email);
+                stmt.setString(4, hash);
+                stmt.executeUpdate();
+                stmt.close();
+                conn.close();
+
+                String response = "{\"status\":\"success\", \"id\":\"" + id + "\"}";
+                t.getResponseHeaders().add("Content-Type", "application/json");
+                t.sendResponseHeaders(200, response.getBytes().length);
+                OutputStream os = t.getResponseBody();
+                os.write(response.getBytes());
+                os.close();
+            } catch (Exception e) {
+                String err = "{\"error\": \"" + e.getMessage().replace("\"", "\\\"").replace("\n", " ") + "\"}";
+                t.getResponseHeaders().add("Content-Type", "application/json");
+                t.sendResponseHeaders(400, err.getBytes().length);
+                OutputStream os = t.getResponseBody();
+                os.write(err.getBytes());
+                os.close();
+            }
+        }
+    }
+
+    static class LoginHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange t) throws IOException {
+            setCorsHeaders(t);
+            if (t.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
+                t.sendResponseHeaders(204, -1);
+                return;
+            }
+            try {
+                InputStream is = t.getRequestBody();
+                Scanner scanner = new Scanner(is).useDelimiter("\\A");
+                String body = scanner.hasNext() ? scanner.next() : "";
+                
+                String username = body.contains("\"username\":\"") ? body.split("\"username\":\"")[1].split("\"")[0] : "";
+                String password = body.contains("\"password\":\"") ? body.split("\"password\":\"")[1].split("\"")[0] : "";
+
+                String hash = hashPassword(password);
+
+                Connection conn = DriverManager.getConnection("jdbc:postgresql://dpg-db54c7ajnfac7396rhag-a.singapore-postgres.render.com:5432/cine_archive?sslmode=require", "cine_man", "U1QfHtPVsMk2AbHUEi3NqpxZL7V6gWsc");
+                PreparedStatement stmt = conn.prepareStatement("SELECT id, username, email, role, bio FROM users WHERE username = ? AND password_hash = ?");
+                stmt.setString(1, username);
+                stmt.setString(2, hash);
+                ResultSet rs = stmt.executeQuery();
+                
+                String response;
+                if (rs.next()) {
+                    response = "{\"status\":\"success\", \"id\":\"" + rs.getString("id") + "\", \"username\":\"" + rs.getString("username") + "\"}";
+                } else {
+                    response = "{\"error\":\"Invalid username or password\"}";
+                }
+                rs.close();
+                stmt.close();
+                conn.close();
+
+                t.getResponseHeaders().add("Content-Type", "application/json");
+                t.sendResponseHeaders(200, response.getBytes().length);
+                OutputStream os = t.getResponseBody();
+                os.write(response.getBytes());
+                os.close();
+            } catch (Exception e) {
+                String err = "{\"error\": \"" + e.getMessage().replace("\"", "\\\"").replace("\n", " ") + "\"}";
+                t.getResponseHeaders().add("Content-Type", "application/json");
+                t.sendResponseHeaders(400, err.getBytes().length);
+                OutputStream os = t.getResponseBody();
+                os.write(err.getBytes());
+                os.close();
+            }
+        }
+    }
+
     static class SqlHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange t) throws IOException {
-            t.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
-            t.getResponseHeaders().add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-            t.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
+            setCorsHeaders(t);
             
             if (t.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
                 t.sendResponseHeaders(204, -1);

@@ -2653,14 +2653,10 @@ document.addEventListener("DOMContentLoaded", () => {
             title.textContent = "Create Account";
             submitBtn.textContent = "Sign Up";
             toggleLink.textContent = "Already have an account? Sign In";
-            usernameGroup.style.display = "block";
-            usernameInput.required = true;
         } else {
             title.textContent = "Sign In";
             submitBtn.textContent = "Sign In";
             toggleLink.textContent = "Need an account? Sign up";
-            usernameGroup.style.display = "none";
-            usernameInput.required = false;
         }
         errorDiv.textContent = "";
     };
@@ -2673,11 +2669,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const endpoint = isSignUpMode ? "http://localhost:8080/api/signup" : "http://localhost:8080/api/login";
         const payload = {
-            email: document.getElementById("auth-email").value,
+            username: document.getElementById("auth-username").value,
             password: document.getElementById("auth-password").value
         };
         if (isSignUpMode) {
-            payload.username = usernameInput.value;
             payload.bio = "New user ready to explore cinema.";
         }
 
@@ -2735,16 +2730,18 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // Update switchTab function intercept
-const originalSwitchTab = window.switchTab; // It is not global, it's inside DOMContentLoaded in app.js
-// Wait, `switchTab` isn't global. So we will intercept the click on profile link directly and stop propagation if not logged in.
-profileNavLink = document.getElementById("profile-nav-link"); // already have it
-profileNavLink.addEventListener("click", (e) => {
-    if (!db.activeUserId) {
-        e.stopPropagation(); // Prevent switchTab
-        e.preventDefault();
-        document.getElementById("auth-modal").classList.remove("hidden");
+document.addEventListener("DOMContentLoaded", () => {
+    const pLink = document.getElementById("profile-nav-link");
+    if (pLink) {
+        pLink.addEventListener("click", (e) => {
+            if (!db.activeUserId) {
+                e.stopPropagation(); // Prevent switchTab
+                e.preventDefault();
+                document.getElementById("auth-modal").classList.remove("hidden");
+            }
+        }, true); // Use capture phase to intercept before app.js
     }
-}, true); // Use capture phase to intercept before app.js
+});
 
 
 function openPublicProfile(userId) {
