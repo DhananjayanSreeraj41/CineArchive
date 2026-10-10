@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PostgreSQL + Java Link Test</title>
+    <style>
+        body { font-family: 'Outfit', sans-serif; background: #1d2021; color: #ebdbb2; padding: 2rem; }
+        .movie-card { background: #282828; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; border-left: 5px solid #b8bb26; }
+        h1 { color: #fe8019; }
+        button { padding: 10px 20px; background: #fe8019; color: #282828; border: none; font-weight: bold; cursor: pointer; border-radius: 5px; }
+        button:hover { background: #fabd2f; }
+    </style>
+</head>
+<body>
+    <h1>3-Tier Architecture Test</h1>
+    <p>This page fetches real data from <strong>PostgreSQL</strong> via the <strong>Java Backend</strong>.</p>
+    
+    <button onclick="fetchMovies()">Load Movies from Database</button>
+    
+    <div id="status" style="margin-top: 20px; color: #83a598;"></div>
+    <div id="movies" style="margin-top: 20px;"></div>
+
+    <script>
+        async function fetchMovies() {
+            const statusEl = document.getElementById('status');
+            const moviesEl = document.getElementById('movies');
+            
+            statusEl.innerText = "Connecting to Java server (http://localhost:8080/api/movies)...";
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/movies');
+                if (!response.ok) throw new Error("Server returned " + response.status);
+                
+                const data = await response.json();
+                statusEl.innerText = "Success! " + data.length + " movies loaded from PostgreSQL.";
+                
+                moviesEl.innerHTML = '';
+                data.forEach(movie => {
+                    moviesEl.innerHTML += `
+                        <div class="movie-card">
+                            <h2>${movie.title} (${movie.year})</h2>
+                            <p><strong>Language:</strong> ${movie.language} | <strong>Likes:</strong> ${movie.likes_count}</p>
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                statusEl.innerText = "Error: " + err.message + "\nMake sure the Java server is running!";
+                statusEl.style.color = "#fb4934";
+            }
+        }
+    </script>
+</body>
+</html>

@@ -180,21 +180,53 @@ class CineArchiveDB {
         this.logs = [];
         this.activeRole = "admin"; // Default view role
         this.activeUserId = "u1"; // CinephileExplorer session user
-        this.init();
+        // this.init() is now called asynchronously
     }
 
-    init() {
-        const savedDB = localStorage.getItem("cinearchive_relational_db");
-        if (savedDB) {
+        async fetchWithTimeout(url, options = {}, timeout = 2000) {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeout);
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(id);
+        return response;
+    }
+
+    async init() {
+        this.log("system", "Connecting to PostgreSQL Database via Java Server...");
+        let success = true;
+        const tableNames = Object.keys(this.tables);
+        for (let table of tableNames) {
             try {
-                this.tables = JSON.parse(savedDB);
-                this.log("info", "Relational database loaded successfully from browser local storage.");
-            } catch (e) {
-                console.error("Failed to parse stored DB, seeding defaults.", e);
-                this.seedDefaults();
+                const res = await this.fetchWithTimeout('http://localhost:8080/api/sql', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: `SELECT * FROM ${table}`
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && !data.error) {
+                        this.tables[table] = data;
+                    } else {
+                        success = false;
+                    }
+                } else {
+                    success = false;
+                }
+            } catch (err) {
+                console.error(`Error loading table ${table}:`, err);
+                success = false;
             }
-        } else {
+        }
+        
+        // Critical Fallback: If DB is empty, failed to load, or user didn't run push_to_render.sh
+        if (!success || this.tables.users.length === 0) {
+            this.log("error", "Database connection failed or tables missing. Falling back to local offline mode.");
             this.seedDefaults();
+        } else {
+            this.log("system", "Database hydration complete. UI linked successfully.");
         }
     }
 
@@ -220,7 +252,7 @@ class CineArchiveDB {
     }
 
     save() {
-        localStorage.setItem("cinearchive_relational_db", JSON.stringify(this.tables));
+        // No-op. Sync happens via PostgreSQL queries now.
     }
 
     log(type, msg) {
@@ -895,7 +927,8 @@ const state = {
 };
 
 // 4. CORE CONTROLLER & TAB ROUTER
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+    await db.init();
     initApp();
 });
 
@@ -1001,6 +1034,7 @@ function renderTab(tabId) {
 function updateGlobalStats() {
     const totalFilms = db.tables.movies.length;
     const user = state.getActiveUser();
+    if (!user) return; // Safeguard if DB is empty
     
     const watchedCount = db.tables.ratings.filter(r => r.user_id === user.id).length;
     const reviewCount = db.tables.reviews.filter(r => r.user_id === user.id && r.review_text.trim() !== "").length;
