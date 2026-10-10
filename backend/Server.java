@@ -49,25 +49,8 @@ public class Server {
     }
 
     private static Connection getDBConnection() throws Exception {
-        String url = "jdbc:postgresql://dpg-db54c7ajnfac7396rhag-a.singapore-postgres.render.com:5432/cine_archive?sslmode=require";
-        String user = "cine_man";
-        String pass = "U1QfHtPVsMk2AbHUEi3NqpxZL7V6gWsc";
-        
-        int maxRetries = 12;
-        int delayMs = 5000;
-        
-        for (int i = 0; i < maxRetries; i++) {
-            try {
-                return DriverManager.getConnection(url, user, pass);
-            } catch (Exception e) {
-                if (i == maxRetries - 1) {
-                    throw e; // throw on last attempt
-                }
-                System.out.println("Error: " + e.getMessage() + " | Connection failed, retrying in " + (delayMs/1000) + "s... (Attempt " + (i+1) + " of " + maxRetries + ")");
-                Thread.sleep(delayMs);
-            }
-        }
-        return null;
+        Class.forName("org.sqlite.JDBC");
+        return DriverManager.getConnection("jdbc:sqlite:cine_archive.db");
     }
 
     static class SignupHandler implements HttpHandler {
