@@ -49,7 +49,7 @@ public class Server {
     }
 
     private static Connection getDBConnection() throws Exception {
-        String url = "jdbc:postgresql://dpg-db54c7ajnfac7396rhag-a.singapore-postgres.render.com:5432/cine_archive?sslmode=require&loginTimeout=5";
+        String url = "jdbc:postgresql://dpg-db54c7ajnfac7396rhag-a.singapore-postgres.render.com:5432/cine_archive?sslmode=require";
         String user = "cine_man";
         String pass = "U1QfHtPVsMk2AbHUEi3NqpxZL7V6gWsc";
         
