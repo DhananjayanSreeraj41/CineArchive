@@ -183,7 +183,7 @@ class CineArchiveDB {
         // this.init() is now called asynchronously
     }
 
-        async fetchWithTimeout(url, options = {}, timeout = 2000) {
+    async fetchWithTimeout(url, options = {}, timeout = 6000) {
         const controller = new AbortController();
         const id = setTimeout(() => controller.abort(), timeout);
         const response = await fetch(url, {
@@ -430,6 +430,24 @@ class CineArchiveDB {
         }
 
         this.log("transaction", `[TRANSACTION COMMIT] Insert complete in ${tableName.toUpperCase()}`);
+
+        // Asynchronously persist to shared Render PostgreSQL backend
+        try {
+            const cols = Object.keys(row).filter(c => row[c] !== undefined && row[c] !== null);
+            const colList = cols.join(", ");
+            const valList = cols.map(c => {
+                const val = row[c];
+                if (typeof val === "number") return val;
+                if (typeof val === "boolean") return val ? "TRUE" : "FALSE";
+                return `'${String(val).replace(/'/g, "''")}'`;
+            }).join(", ");
+            this.fetchWithTimeout('http://localhost:8080/api/sql', {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: `INSERT INTO ${tableName} (${colList}) VALUES (${valList}) ON CONFLICT DO NOTHING`
+            }, 5000).catch(() => {});
+        } catch (e) {}
+
         return row;
     }
 
@@ -472,6 +490,23 @@ class CineArchiveDB {
         }
 
         this.log("transaction", `[TRANSACTION COMMIT] Update complete in ${tableName.toUpperCase()}`);
+
+        // Asynchronously persist to shared Render PostgreSQL backend
+        try {
+            const setClauses = Object.keys(updatedData).map(c => {
+                const val = updatedData[c];
+                const formatted = typeof val === "number" ? val : (typeof val === "boolean" ? (val ? "TRUE" : "FALSE") : `'${String(val).replace(/'/g, "''")}'`);
+                return `${c} = ${formatted}`;
+            }).join(", ");
+            if (setClauses) {
+                this.fetchWithTimeout('http://localhost:8080/api/sql', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: `UPDATE ${tableName} SET ${setClauses} WHERE id = '${String(id).replace(/'/g, "''")}'`
+                }, 5000).catch(() => {});
+            }
+        } catch (e) {}
+
         return row;
     }
 
@@ -528,6 +563,16 @@ class CineArchiveDB {
         }
 
         this.log("transaction", `[TRANSACTION COMMIT] Delete complete in ${tableName.toUpperCase()}`);
+
+        // Asynchronously persist to shared Render PostgreSQL backend
+        try {
+            this.fetchWithTimeout('http://localhost:8080/api/sql', {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: `DELETE FROM ${tableName} WHERE id = '${String(id).replace(/'/g, "''")}'`
+            }, 5000).catch(() => {});
+        } catch (e) {}
+
         return deletedRow;
     }
 
@@ -917,7 +962,7 @@ const db = new CineArchiveDB();
 // 3. SPA STATE WRAPPER (Binds relational queries to UI)
 const state = {
     // Current active user object resolved from DB
-    getActiveUser: () => db.tables.users.find(u => u.id === db.activeUserId),
+    getActiveUser: () => db.tables.users.find(u => u.id === db.activeUserId) || JSON.parse(localStorage.getItem("activeUserData") || "null") || { id: db.activeUserId, username: "User", bio: "" },
     
     // Getter list wrappers mapping joints
     getMovies: () => db.tables.movies,
@@ -1436,20 +1481,25 @@ function renderListsCatalog() {
 // 9. PROFILE VIEW
 function renderProfileView() {
     const user = state.getActiveUser();
-    document.getElementById("profile-username").textContent = user.username;
+    const usernameEl = document.getElementById("profile-username");
+    if (usernameEl) usernameEl.textContent = user?.username || "User";
     
     // Set bio
     const bioText = document.querySelector(".profile-bio");
-    if (bioText) bioText.textContent = user.bio;
+    if (bioText) bioText.textContent = user?.bio || "";
 
     // Load metrics
     const statsResult = db.sp_user_analytics(user?.id);
     if (statsResult.status === "Success") {
         const m = statsResult.metrics;
-        document.getElementById("profile-watched-count").textContent = m.totalWatched;
-        document.getElementById("profile-watchlist-count").textContent = m.watchlistCount;
-        document.getElementById("profile-likes-count").textContent = db.tables.ratings.filter(r => r.user_id === user?.id && r.rating_value === 5).length;
-        document.getElementById("profile-lists-count").textContent = m.customListsCount;
+        const watchedEl = document.getElementById("profile-watched-count");
+        if (watchedEl) watchedEl.textContent = m.totalWatched;
+        const watchlistEl = document.getElementById("profile-watchlist-count");
+        if (watchlistEl) watchlistEl.textContent = m.watchlistCount;
+        const likesEl = document.getElementById("profile-likes-count");
+        if (likesEl) likesEl.textContent = db.tables.ratings.filter(r => r.user_id === user?.id && r.rating_value === 5).length;
+        const listsEl = document.getElementById("profile-lists-count");
+        if (listsEl) listsEl.textContent = m.customListsCount;
     }
 
     renderProfileSection("diary");
@@ -2690,6 +2740,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 errorDiv.textContent = data.error;
             } else if (data.status === "success") {
                 localStorage.setItem("activeUserId", data.id);
+                localStorage.setItem("activeUserData", JSON.stringify({ id: data.id, username: data.username || payload.username, bio: "New user ready to explore cinema." }));
                 db.activeUserId = data.id;
                 
                 // Fetch the new user data if not in db.tables.users
