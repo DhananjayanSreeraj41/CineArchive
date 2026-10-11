@@ -183,7 +183,7 @@ class CineArchiveDB {
         // this.init() is now called asynchronously
     }
 
-        async fetchWithTimeout(url, options = {}, timeout = 2000) {
+    async fetchWithTimeout(url, options = {}, timeout = 6000) {
         const controller = new AbortController();
         const id = setTimeout(() => controller.abort(), timeout);
         const response = await fetch(url, {
@@ -430,6 +430,24 @@ class CineArchiveDB {
         }
 
         this.log("transaction", `[TRANSACTION COMMIT] Insert complete in ${tableName.toUpperCase()}`);
+
+        // Asynchronously persist to shared Render PostgreSQL backend
+        try {
+            const cols = Object.keys(row).filter(c => row[c] !== undefined && row[c] !== null);
+            const colList = cols.join(", ");
+            const valList = cols.map(c => {
+                const val = row[c];
+                if (typeof val === "number") return val;
+                if (typeof val === "boolean") return val ? "TRUE" : "FALSE";
+                return `'${String(val).replace(/'/g, "''")}'`;
+            }).join(", ");
+            this.fetchWithTimeout('http://localhost:8080/api/sql', {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: `INSERT INTO ${tableName} (${colList}) VALUES (${valList}) ON CONFLICT DO NOTHING`
+            }, 5000).catch(() => {});
+        } catch (e) {}
+
         return row;
     }
 
@@ -472,6 +490,23 @@ class CineArchiveDB {
         }
 
         this.log("transaction", `[TRANSACTION COMMIT] Update complete in ${tableName.toUpperCase()}`);
+
+        // Asynchronously persist to shared Render PostgreSQL backend
+        try {
+            const setClauses = Object.keys(updatedData).map(c => {
+                const val = updatedData[c];
+                const formatted = typeof val === "number" ? val : (typeof val === "boolean" ? (val ? "TRUE" : "FALSE") : `'${String(val).replace(/'/g, "''")}'`);
+                return `${c} = ${formatted}`;
+            }).join(", ");
+            if (setClauses) {
+                this.fetchWithTimeout('http://localhost:8080/api/sql', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: `UPDATE ${tableName} SET ${setClauses} WHERE id = '${String(id).replace(/'/g, "''")}'`
+                }, 5000).catch(() => {});
+            }
+        } catch (e) {}
+
         return row;
     }
 
@@ -528,6 +563,16 @@ class CineArchiveDB {
         }
 
         this.log("transaction", `[TRANSACTION COMMIT] Delete complete in ${tableName.toUpperCase()}`);
+
+        // Asynchronously persist to shared Render PostgreSQL backend
+        try {
+            this.fetchWithTimeout('http://localhost:8080/api/sql', {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: `DELETE FROM ${tableName} WHERE id = '${String(id).replace(/'/g, "''")}'`
+            }, 5000).catch(() => {});
+        } catch (e) {}
+
         return deletedRow;
     }
 
