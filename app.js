@@ -18,7 +18,11 @@ const SEED_DIRECTORS = [
     { id: "d4", name: "Hayao Miyazaki", birth_year: 1941, bio: "Japanese animator, director and co-founder of Studio Ghibli, legendary teller of dreams." },
     { id: "d5", name: "Quentin Tarantino", birth_year: 1963, bio: "American director celebrated for stylized violence, witty dialogue, and retro aesthetics." },
     { id: "d6", name: "Damien Chazelle", birth_year: 1985, bio: "Youngest Best Director Oscar winner, famous for music-centric high-tempo dramas." },
-    { id: "d7", name: "Kemp Powers", birth_year: 1973, bio: "Acclaimed American director and playwright, writer of Soul and Spider-Verse." }
+    { id: "d7", name: "Kemp Powers", birth_year: 1973, bio: "Acclaimed American director and playwright, writer of Soul and Spider-Verse." },
+    { id: "d8", name: "Francis Ford Coppola", birth_year: 1939, bio: "Legendary American filmmaker, director of The Godfather trilogy and Apocalypse Now." },
+    { id: "d9", name: "David Fincher", birth_year: 1962, bio: "American director renowned for psychological thrillers including Fight Club, Se7en, and The Social Network." },
+    { id: "d10", name: "The Wachowskis", birth_year: 1965, bio: "Visionary sibling filmmakers, creators of The Matrix franchise and Cloud Atlas." },
+    { id: "d11", name: "Frank Darabont", birth_year: 1959, bio: "Three-time Oscar-nominated American filmmaker, director of The Shawshank Redemption and The Green Mile." }
 ];
 
 const SEED_ACTORS = [
@@ -36,7 +40,22 @@ const SEED_ACTORS = [
     { id: "a12", name: "Miles Teller", birth_year: 1987, bio: "Intense American actor, starred in Whiplash and Top Gun: Maverick." },
     { id: "a13", name: "Emma Stone", birth_year: 1988, bio: "Double Oscar-winning American actress, lead of La La Land and Poor Things." },
     { id: "a14", name: "J.K. Simmons", birth_year: 1955, bio: "Oscar-winning character actor, unforgettable performance as Fletcher in Whiplash." },
-    { id: "a15", name: "Ryan Gosling", birth_year: 1980, bio: "Charismatic Oscar-nominated Canadian actor, lead of La La Land and Drive." }
+    { id: "a15", name: "Ryan Gosling", birth_year: 1980, bio: "Charismatic Oscar-nominated Canadian actor, lead of La La Land and Drive." },
+    { id: "a16", name: "Cillian Murphy", birth_year: 1976, bio: "Academy Award-winning Irish actor, titular physicist in Oppenheimer and star of Peaky Blinders." },
+    { id: "a17", name: "Robert Downey Jr.", birth_year: 1965, bio: "Academy Award-winning American actor, Lewis Strauss in Oppenheimer and Tony Stark in the MCU." },
+    { id: "a18", name: "Leonardo DiCaprio", birth_year: 1974, bio: "Academy Award-winning American actor, lead of Inception, Titanic, and The Wolf of Wall Street." },
+    { id: "a19", name: "Al Pacino", birth_year: 1940, bio: "Legendary Academy Award-winning American actor, Michael Corleone in The Godfather and Tony Montana in Scarface." },
+    { id: "a20", name: "Marlon Brando", birth_year: 1924, bio: "Cultural icon and two-time Oscar winner, Don Vito Corleone in The Godfather." },
+    { id: "a21", name: "Brad Pitt", birth_year: 1963, bio: "Academy Award-winning American actor, Tyler Durden in Fight Club and Aldo Raine in Inglourious Basterds." },
+    { id: "a22", name: "Edward Norton", birth_year: 1969, bio: "Three-time Oscar-nominated American actor, the Narrator in Fight Club and American History X." },
+    { id: "a23", name: "Keanu Reeves", birth_year: 1964, bio: "Iconic Canadian actor, Neo in The Matrix and the titular assassin in John Wick." },
+    { id: "a24", name: "Laurence Fishburne", birth_year: 1961, bio: "Oscar-nominated American actor, Morpheus in The Matrix." },
+    { id: "a25", name: "Morgan Freeman", birth_year: 1937, bio: "Academy Award-winning American actor, Ellis Boyd 'Red' Redding in The Shawshank Redemption." },
+    { id: "a26", name: "Tim Robbins", birth_year: 1958, bio: "Academy Award-winning American actor, Andy Dufresne in The Shawshank Redemption." },
+    { id: "a27", name: "Harrison Ford", birth_year: 1942, bio: "Legendary American actor, Rick Deckard in Blade Runner 2049, Han Solo, and Indiana Jones." },
+    { id: "a28", name: "Ana de Armas", birth_year: 1988, bio: "Academy Award-nominated actress, Joi in Blade Runner 2049 and Knives Out." },
+    { id: "a29", name: "Christoph Waltz", birth_year: 1956, bio: "Two-time Academy Award-winning Austrian actor, Colonel Hans Landa in Inglourious Basterds." },
+    { id: "a30", name: "Amy Adams", birth_year: 1974, bio: "Six-time Academy Award-nominated American actress, linguist Dr. Louise Banks in Arrival." }
 ];
 
 const SEED_GENRES = [
@@ -64,7 +83,17 @@ const SEED_MOVIES = [
     { id: "m7", title: "The Dark Knight", year: 2008, director_id: "d2", runtime: 152, language: "English", country: "USA", avg_rating: 4.8, likes_count: 35123, poster: "movies/dark-knight-poster.jpg", backdrop: "movies/dark-knight-backdrop.jpg", synopsis: "When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of his greatest tests." },
     { id: "m8", title: "Pulp Fiction", year: 1994, director_id: "d5", runtime: 154, language: "English", country: "USA", avg_rating: 4.6, likes_count: 32091, poster: "movies/pulp-fiction-poster.jpg", backdrop: "movies/pulp-fiction-backdrop.jpg", synopsis: "The lives of two mob hitmen, a boxer, a gangster and his wife, and a pair of diner bandits intertwine in four tales of violence and redemption." },
     { id: "m9", title: "Whiplash", year: 2014, director_id: "d6", runtime: 106, language: "English", country: "USA", avg_rating: 4.6, likes_count: 24109, poster: "movies/whiplash-poster.jpg", backdrop: "movies/whiplash-backdrop.jpg", synopsis: "Under the direction of a ruthless instructor, a talented young drummer begins to pursue perfection at any cost." },
-    { id: "m10", title: "La La Land", year: 2016, director_id: "d6", runtime: 128, language: "English", country: "USA", avg_rating: 4.4, likes_count: 26802, poster: "movies/la-la-land-poster.jpg", backdrop: "movies/la-la-land-backdrop.jpg", synopsis: "While navigating their careers in Los Angeles, a pianist and an actress fall in love while attempting to reconcile their aspirations." }
+    { id: "m10", title: "La La Land", year: 2016, director_id: "d6", runtime: 128, language: "English", country: "USA", avg_rating: 4.4, likes_count: 26802, poster: "movies/la-la-land-poster.jpg", backdrop: "movies/la-la-land-backdrop.jpg", synopsis: "While navigating their careers in Los Angeles, a pianist and an actress fall in love while attempting to reconcile their aspirations." },
+    { id: "m11", title: "Oppenheimer", year: 2023, director_id: "d2", runtime: 180, language: "English", country: "USA", avg_rating: 4.8, likes_count: 36290, poster: "movies/oppenheimer-poster.jpg", backdrop: "movies/oppenheimer-backdrop.jpg", synopsis: "The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb during World War II." },
+    { id: "m12", title: "Inception", year: 2010, director_id: "d2", runtime: 148, language: "English", country: "USA", avg_rating: 4.8, likes_count: 42150, poster: "movies/inception-poster.jpg", backdrop: "movies/inception-backdrop.jpg", synopsis: "A thief who steals corporate secrets through dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O." },
+    { id: "m13", title: "The Godfather", year: 1972, director_id: "d8", runtime: 175, language: "English", country: "USA", avg_rating: 4.9, likes_count: 48900, poster: "movies/godfather-poster.jpg", backdrop: "movies/godfather-backdrop.jpg", synopsis: "The aging patriarch of an organized crime dynasty transfers control of his clandestine empire to his reluctant youngest son." },
+    { id: "m14", title: "Fight Club", year: 1999, director_id: "d9", runtime: 139, language: "English", country: "USA", avg_rating: 4.7, likes_count: 39800, poster: "movies/fight-club-poster.jpg", backdrop: "movies/fight-club-backdrop.jpg", synopsis: "An insomniac office worker looking for a way to change his life crosses paths with a devil-may-care soap maker and forms an underground fight club." },
+    { id: "m15", title: "The Matrix", year: 1999, director_id: "d10", runtime: 136, language: "English", country: "USA", avg_rating: 4.7, likes_count: 37500, poster: "movies/matrix-poster.jpg", backdrop: "movies/matrix-backdrop.jpg", synopsis: "When a beautiful stranger leads computer hacker Neo to a forbidding underworld, he discovers the shocking truth about the simulated reality." },
+    { id: "m16", title: "The Shawshank Redemption", year: 1994, director_id: "d11", runtime: 142, language: "English", country: "USA", avg_rating: 4.9, likes_count: 51200, poster: "movies/shawshank-poster.jpg", backdrop: "movies/shawshank-backdrop.jpg", synopsis: "Over the course of several years, two convicts form a friendship, seeking consolation and redemption through basic compassion." },
+    { id: "m17", title: "Blade Runner 2049", year: 2017, director_id: "d1", runtime: 164, language: "English", country: "USA", avg_rating: 4.6, likes_count: 28400, poster: "movies/blade-runner-2049-poster.jpg", backdrop: "movies/blade-runner-2049-backdrop.jpg", synopsis: "Young Blade Runner K's discovery of a long-buried secret leads him to track down former Blade Runner Rick Deckard, missing for thirty years." },
+    { id: "m18", title: "Princess Mononoke", year: 1997, director_id: "d4", runtime: 134, language: "Japanese", country: "Japan", avg_rating: 4.8, likes_count: 27900, poster: "movies/princess-mononoke-poster.jpg", backdrop: "movies/princess-mononoke-backdrop.jpg", synopsis: "On a journey to find the cure for a Tatarigami's curse, Ashitaka finds himself in the middle of a war between forest gods and Tatara." },
+    { id: "m19", title: "Inglourious Basterds", year: 2009, director_id: "d5", runtime: 153, language: "English", country: "USA", avg_rating: 4.6, likes_count: 31200, poster: "movies/inglourious-basterds-poster.jpg", backdrop: "movies/inglourious-basterds-backdrop.jpg", synopsis: "In Nazi-occupied France during World War II, a group of Jewish U.S. soldiers plans to assassinate Nazi leaders alongside a theatre owner." },
+    { id: "m20", title: "Arrival", year: 2016, director_id: "d1", runtime: 116, language: "English", country: "USA", avg_rating: 4.7, likes_count: 26500, poster: "movies/arrival-poster.jpg", backdrop: "movies/arrival-backdrop.jpg", synopsis: "A linguist works with the military to communicate with alien lifeforms after twelve mysterious spacecraft appear around the world." }
 ];
 
 // Junction Table: Movie Genres
@@ -78,7 +107,17 @@ const SEED_MOVIE_GENRES = [
     { id: "mg19", movie_id: "m7", genre_id: "g5" }, { id: "mg20", movie_id: "m7", genre_id: "g10" }, { id: "mg21", movie_id: "m7", genre_id: "g3" },
     { id: "mg22", movie_id: "m8", genre_id: "g10" }, { id: "mg23", movie_id: "m8", genre_id: "g6" },
     { id: "mg24", movie_id: "m9", genre_id: "g3" }, { id: "mg25", movie_id: "m9", genre_id: "g11" },
-    { id: "mg26", movie_id: "m10", genre_id: "g12" }, { id: "mg27", movie_id: "m10", genre_id: "g3" }, { id: "mg28", movie_id: "m10", genre_id: "g11" }
+    { id: "mg26", movie_id: "m10", genre_id: "g12" }, { id: "mg27", movie_id: "m10", genre_id: "g3" }, { id: "mg28", movie_id: "m10", genre_id: "g11" },
+    { id: "mg29", movie_id: "m11", genre_id: "g3" }, { id: "mg30", movie_id: "m11", genre_id: "g6" },
+    { id: "mg31", movie_id: "m12", genre_id: "g1" }, { id: "mg32", movie_id: "m12", genre_id: "g5" }, { id: "mg33", movie_id: "m12", genre_id: "g2" },
+    { id: "mg34", movie_id: "m13", genre_id: "g10" }, { id: "mg35", movie_id: "m13", genre_id: "g3" },
+    { id: "mg36", movie_id: "m14", genre_id: "g3" }, { id: "mg37", movie_id: "m14", genre_id: "g6" },
+    { id: "mg38", movie_id: "m15", genre_id: "g1" }, { id: "mg39", movie_id: "m15", genre_id: "g5" },
+    { id: "mg40", movie_id: "m16", genre_id: "g3" }, { id: "mg41", movie_id: "m16", genre_id: "g10" },
+    { id: "mg42", movie_id: "m17", genre_id: "g1" }, { id: "mg43", movie_id: "m17", genre_id: "g3" }, { id: "mg44", movie_id: "m17", genre_id: "g6" },
+    { id: "mg45", movie_id: "m18", genre_id: "g4" }, { id: "mg46", movie_id: "m18", genre_id: "g8" }, { id: "mg47", movie_id: "m18", genre_id: "g2" },
+    { id: "mg48", movie_id: "m19", genre_id: "g3" }, { id: "mg49", movie_id: "m19", genre_id: "g5" }, { id: "mg50", movie_id: "m19", genre_id: "g6" },
+    { id: "mg51", movie_id: "m20", genre_id: "g1" }, { id: "mg52", movie_id: "m20", genre_id: "g3" }, { id: "mg53", movie_id: "m20", genre_id: "g6" }
 ];
 
 // Junction Table: Movie Actors
@@ -91,7 +130,17 @@ const SEED_MOVIE_ACTORS = [
     { id: "ma8", movie_id: "m7", actor_id: "a8" }, { id: "ma9", movie_id: "m7", actor_id: "a9" },
     { id: "ma10", movie_id: "m8", actor_id: "a10" }, { id: "ma11", movie_id: "m8", actor_id: "a11" },
     { id: "ma12", movie_id: "m9", actor_id: "a12" }, { id: "ma13", movie_id: "m9", actor_id: "a14" },
-    { id: "ma14", movie_id: "m10", actor_id: "a13" }, { id: "ma15", movie_id: "m10", actor_id: "a15" }
+    { id: "ma14", movie_id: "m10", actor_id: "a13" }, { id: "ma15", movie_id: "m10", actor_id: "a15" },
+    { id: "ma16", movie_id: "m11", actor_id: "a16" }, { id: "ma17", movie_id: "m11", actor_id: "a17" },
+    { id: "ma18", movie_id: "m12", actor_id: "a18" },
+    { id: "ma19", movie_id: "m13", actor_id: "a19" }, { id: "ma20", movie_id: "m13", actor_id: "a20" },
+    { id: "ma21", movie_id: "m14", actor_id: "a21" }, { id: "ma22", movie_id: "m14", actor_id: "a22" },
+    { id: "ma23", movie_id: "m15", actor_id: "a23" }, { id: "ma24", movie_id: "m15", actor_id: "a24" },
+    { id: "ma25", movie_id: "m16", actor_id: "a25" }, { id: "ma26", movie_id: "m16", actor_id: "a26" },
+    { id: "ma27", movie_id: "m17", actor_id: "a15" }, { id: "ma28", movie_id: "m17", actor_id: "a27" }, { id: "ma29", movie_id: "m17", actor_id: "a28" },
+    { id: "ma30", movie_id: "m18", actor_id: "a7" },
+    { id: "ma31", movie_id: "m19", actor_id: "a21" }, { id: "ma32", movie_id: "m19", actor_id: "a29" },
+    { id: "ma33", movie_id: "m20", actor_id: "a30" }
 ];
 
 const SEED_REVIEWS = [
