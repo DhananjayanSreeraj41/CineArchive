@@ -8,19 +8,44 @@ This project is built as a Single-Page Application (SPA) using **HTML5, CSS3, an
 
 ---
 
-## 🚀 Live Demo & How to Run
+## 🚀 How to Run & Quickstart
 
-Since the application is built entirely as a client-side Single-Page Application, it does not require a complex build system, Node.js, or server setup.
+### Step 1: Start the Java Backend Server
+The backend provides real-time relational persistence, authentication, and SQL query endpoints:
+```bash
+cd backend
+./run_server.sh
+```
+> **Note:** `run_server.sh` automatically compiles `Server.java`, auto-cleans any stale process on port 8080, and starts the server on `http://localhost:8080`.
 
-### Option 1: Direct Execution
-1. Locate the [index.html](file:///home/dhanan/Documents/LetterBox/index.html) file.
-2. Double-click or open `index.html` in any modern web browser.
+### Step 2: Open the Frontend Application
+- **Option A (Direct Execution):** Simply double-click or open `index.html` in any web browser.
+- **Option B (VS Code Live Server):** Right-click `index.html` and select **Open with Live Server** (`http://127.0.0.1:5500/`).
 
-### Option 2: Live Server (Recommended for development)
-If you are using Visual Studio Code, you can run a local development server:
-1. Install the **Live Server** extension.
-2. Right-click [index.html](file:///home/dhanan/Documents/LetterBox/index.html) and select **Open with Live Server**.
-3. The project will open at `http://127.0.0.1:5500/`.
+---
+
+## 🔑 Demo User Accounts & Login Credentials
+
+All seeded accounts are pre-configured with default credentials for instant evaluation:
+
+| Username | Password | Role | Description |
+|---|---|---|---|
+| **`CinephileExplorer`** | `password` | User | Main curator with logged films, watchlists, and reviews |
+| **`AdminCuration`** | `password` | Admin | Full DB administrator with CRUD privileges in DB tab |
+| **`GhibliFanatic`** | `password` | User | Animated feature enthusiast |
+| **`JazzDrummer99`** | `password` | User | Film score & music reviewer |
+| **`InterstellarNerd`** | `password` | User | Sci-Fi reviewer |
+
+> **Custom Account:** You can also click **"Need an account? Sign up"** in the Login modal to register any new account with your own password.
+
+---
+
+## 🌐 Dual-Engine Database Architecture (Cloud + Zero-Downtime Fallback)
+
+CinéArchive implements an enterprise-grade dual-engine database architecture:
+1. **Shared Cloud Database (Render PostgreSQL):** When connected to an unrestricted network, the server automatically connects to the centralized shared Render PostgreSQL database in Singapore. All signups, reviews, and ratings sync across different machines in real time.
+2. **Local Relational Fallback (SQLite):** If outbound TCP port 5432 is blocked (e.g. by university or corporate campus firewalls such as `amrita.edu`) or if running offline, the server instantly and automatically activates the bundled local SQLite relational engine (`backend/cine_archive.db`) with **zero freezing and zero downtime**.
+3. **Automatic Reconnection:** A background daemon thread periodically probes the cloud database. If an internet connection or mobile hotspot becomes available, it seamlessly switches back to the shared cloud database.
 
 ---
 

@@ -186,7 +186,24 @@ public class Server {
         monitorThread.setDaemon(true);
         monitorThread.start();
 
-        HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+        HttpServer server = null;
+        int port = 8080;
+        try {
+            server = HttpServer.create(new InetSocketAddress(port), 0);
+        } catch (java.net.BindException be) {
+            System.out.println("[PORT 8080 BUSY] Existing process detected on port " + port + ". Auto-releasing port...");
+            try {
+                Process p = Runtime.getRuntime().exec(new String[]{"sh", "-c", "fuser -k " + port + "/tcp 2>/dev/null || (lsof -ti:" + port + " | xargs kill -9 2>/dev/null)"});
+                p.waitFor();
+                Thread.sleep(800);
+                server = HttpServer.create(new InetSocketAddress(port), 0);
+                System.out.println("[PORT 8080 BUSY] Successfully reclaimed port " + port + "!");
+            } catch (Throwable t) {
+                System.err.println("\n[ERROR] Port " + port + " is currently in use by another program.");
+                System.err.println("To free the port manually, run: fuser -k 8080/tcp   OR   lsof -ti:8080 | xargs kill -9");
+                throw be;
+            }
+        }
         server.createContext("/api/sql", new SqlHandler());
         server.createContext("/api/signup", new SignupHandler());
         server.createContext("/api/login", new LoginHandler());
