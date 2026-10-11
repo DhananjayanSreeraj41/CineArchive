@@ -917,7 +917,7 @@ const db = new CineArchiveDB();
 // 3. SPA STATE WRAPPER (Binds relational queries to UI)
 const state = {
     // Current active user object resolved from DB
-    getActiveUser: () => db.tables.users.find(u => u.id === db.activeUserId),
+    getActiveUser: () => db.tables.users.find(u => u.id === db.activeUserId) || JSON.parse(localStorage.getItem("activeUserData") || "null") || { id: db.activeUserId, username: "User", bio: "" },
     
     // Getter list wrappers mapping joints
     getMovies: () => db.tables.movies,
@@ -1436,20 +1436,25 @@ function renderListsCatalog() {
 // 9. PROFILE VIEW
 function renderProfileView() {
     const user = state.getActiveUser();
-    document.getElementById("profile-username").textContent = user.username;
+    const usernameEl = document.getElementById("profile-username");
+    if (usernameEl) usernameEl.textContent = user?.username || "User";
     
     // Set bio
     const bioText = document.querySelector(".profile-bio");
-    if (bioText) bioText.textContent = user.bio;
+    if (bioText) bioText.textContent = user?.bio || "";
 
     // Load metrics
     const statsResult = db.sp_user_analytics(user?.id);
     if (statsResult.status === "Success") {
         const m = statsResult.metrics;
-        document.getElementById("profile-watched-count").textContent = m.totalWatched;
-        document.getElementById("profile-watchlist-count").textContent = m.watchlistCount;
-        document.getElementById("profile-likes-count").textContent = db.tables.ratings.filter(r => r.user_id === user?.id && r.rating_value === 5).length;
-        document.getElementById("profile-lists-count").textContent = m.customListsCount;
+        const watchedEl = document.getElementById("profile-watched-count");
+        if (watchedEl) watchedEl.textContent = m.totalWatched;
+        const watchlistEl = document.getElementById("profile-watchlist-count");
+        if (watchlistEl) watchlistEl.textContent = m.watchlistCount;
+        const likesEl = document.getElementById("profile-likes-count");
+        if (likesEl) likesEl.textContent = db.tables.ratings.filter(r => r.user_id === user?.id && r.rating_value === 5).length;
+        const listsEl = document.getElementById("profile-lists-count");
+        if (listsEl) listsEl.textContent = m.customListsCount;
     }
 
     renderProfileSection("diary");
@@ -2690,6 +2695,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 errorDiv.textContent = data.error;
             } else if (data.status === "success") {
                 localStorage.setItem("activeUserId", data.id);
+                localStorage.setItem("activeUserData", JSON.stringify({ id: data.id, username: data.username || payload.username, bio: "New user ready to explore cinema." }));
                 db.activeUserId = data.id;
                 
                 // Fetch the new user data if not in db.tables.users
