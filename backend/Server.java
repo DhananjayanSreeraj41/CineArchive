@@ -235,11 +235,13 @@ public class Server {
                 throw be;
             }
         }
+        File webDir = new File("index.html").exists() ? new File(".") : new File("..");
+        server.createContext("/", new StaticHandler(webDir));
         server.createContext("/api/sql", new SqlHandler());
         server.createContext("/api/signup", new SignupHandler());
         server.createContext("/api/login", new LoginHandler());
         server.setExecutor(null);
-        System.out.println("Java Database Server running on port 8080 (Dual-Engine: " + (usingCloud ? "Shared Cloud PostgreSQL" : "Local SQLite") + ")...");
+        System.out.println("Java Database & Web Server running on http://localhost:8080 (Dual-Engine: " + (usingCloud ? "Shared Cloud PostgreSQL" : "Local SQLite") + ")...");
         server.start();
     }
 
@@ -263,6 +265,57 @@ public class Server {
         t.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         t.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
         t.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
+    }
+
+    static class StaticHandler implements HttpHandler {
+        private final File rootDir;
+        public StaticHandler(File rootDir) {
+            this.rootDir = rootDir;
+        }
+
+        @Override
+        public void handle(HttpExchange t) throws IOException {
+            setCorsHeaders(t);
+            if (t.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
+                t.sendResponseHeaders(204, -1);
+                return;
+            }
+
+            String path = t.getRequestURI().getPath();
+            if (path == null || path.equals("/") || path.isEmpty()) {
+                path = "/index.html";
+            }
+
+            File file = new File(rootDir, path.startsWith("/") ? path.substring(1) : path);
+            if (!file.exists() || file.isDirectory()) {
+                file = new File(rootDir, "index.html");
+            }
+
+            if (file.exists() && !file.isDirectory()) {
+                String fileName = file.getName().toLowerCase();
+                String contentType = "application/octet-stream";
+                if (fileName.endsWith(".html")) contentType = "text/html; charset=UTF-8";
+                else if (fileName.endsWith(".js")) contentType = "application/javascript; charset=UTF-8";
+                else if (fileName.endsWith(".css")) contentType = "text/css; charset=UTF-8";
+                else if (fileName.endsWith(".json")) contentType = "application/json";
+                else if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) contentType = "image/jpeg";
+                else if (fileName.endsWith(".png")) contentType = "image/png";
+                else if (fileName.endsWith(".svg")) contentType = "image/svg+xml";
+
+                byte[] data = Files.readAllBytes(file.toPath());
+                t.getResponseHeaders().set("Content-Type", contentType);
+                t.sendResponseHeaders(200, data.length);
+                OutputStream os = t.getResponseBody();
+                os.write(data);
+                os.close();
+            } else {
+                String notFound = "File not found";
+                t.sendResponseHeaders(404, notFound.length());
+                OutputStream os = t.getResponseBody();
+                os.write(notFound.getBytes());
+                os.close();
+            }
+        }
     }
 
     static class SignupHandler implements HttpHandler {
