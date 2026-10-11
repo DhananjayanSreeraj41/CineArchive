@@ -74,6 +74,13 @@ public class Server {
                         upd.setString(1, defaultHash);
                         upd.executeUpdate();
                     }
+                    try { stmt.execute("ALTER TABLE users ADD COLUMN last_login TEXT"); } catch (Throwable ignored) {}
+                    try {
+                        int updated = stmt.executeUpdate("UPDATE users SET role = 'Admin', password_hash = '" + defaultHash + "' WHERE LOWER(username) = 'admin'");
+                        if (updated == 0) {
+                            stmt.execute("INSERT INTO users (id, username, email, role, joined_date, bio, password_hash, last_login) VALUES ('u_admin', 'admin', 'admin@cinearchive.org', 'Admin', '2025-01-01', 'System Administrator & Operations', '" + defaultHash + "', datetime('now'))");
+                        }
+                    } catch (Throwable ignored) {}
                     System.out.println("[LOCAL DB] Initialization complete.");
                 }
             }
@@ -84,13 +91,27 @@ public class Server {
 
     private static boolean testCloudConnection() {
         try {
-            DriverManager.setLoginTimeout(2);
+            DriverManager.setLoginTimeout(5);
             try (Connection conn = DriverManager.getConnection(CLOUD_DB_URL, CLOUD_USER, CLOUD_PASS)) {
-                return conn != null && !conn.isClosed() && conn.isValid(2);
+                return conn != null && !conn.isClosed() && conn.isValid(4);
             }
         } catch (Throwable t) {
             return false;
         }
+    }
+
+    private static void ensureCloudSchema(Connection conn) {
+        if (conn == null) return;
+        try (Statement stmt = conn.createStatement()) {
+            try { stmt.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP"); } catch (Throwable ignored) {}
+            try {
+                String defaultHash = hashPassword("password");
+                int updated = stmt.executeUpdate("UPDATE users SET role = 'Admin', password_hash = '" + defaultHash + "' WHERE LOWER(username) = 'admin'");
+                if (updated == 0) {
+                    stmt.execute("INSERT INTO users (id, username, email, role, joined_date, bio, password_hash, last_login) VALUES ('u_admin', 'admin', 'admin@cinearchive.org', 'Admin', '2025-01-01', 'System Administrator & Operations', '" + defaultHash + "', CURRENT_TIMESTAMP) ON CONFLICT (id) DO UPDATE SET role = 'Admin', password_hash = '" + defaultHash + "'");
+                }
+            } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {}
     }
 
     private static Connection getDBConnection() throws Exception {
@@ -148,7 +169,10 @@ public class Server {
             for (int i = 0; i < POOL_SIZE; i++) {
                 try {
                     Connection c = DriverManager.getConnection(CLOUD_DB_URL, CLOUD_USER, CLOUD_PASS);
-                    if (c != null) connectionPool.offer(c);
+                    if (c != null) {
+                        if (i == 0) ensureCloudSchema(c);
+                        connectionPool.offer(c);
+                    }
                 } catch (Throwable ignored) {}
             }
         } else {
@@ -165,6 +189,13 @@ public class Server {
                         if (testCloudConnection()) {
                             usingCloud = true;
                             System.out.println("[DATABASE] Render PostgreSQL connection restored! Switched to shared cloud DB.");
+                            try {
+                                Connection testC = DriverManager.getConnection(CLOUD_DB_URL, CLOUD_USER, CLOUD_PASS);
+                                if (testC != null) {
+                                    ensureCloudSchema(testC);
+                                    connectionPool.offer(testC);
+                                }
+                            } catch (Throwable ignored) {}
                         }
                     } else {
                         // Keep-alive ping
@@ -272,18 +303,20 @@ public class Server {
                     checkRs.close();
                     checkStmt.close();
 
-                    PreparedStatement stmt = conn.prepareStatement("INSERT INTO users (id, username, email, password_hash, role, joined_date, bio) VALUES (?, ?, ?, ?, 'User', CURRENT_DATE, 'New user ready to explore cinema.')");
+                    String role = username.equalsIgnoreCase("admin") ? "Admin" : "User";
+                    PreparedStatement stmt = conn.prepareStatement("INSERT INTO users (id, username, email, password_hash, role, joined_date, bio) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, 'New user ready to explore cinema.')");
                     stmt.setString(1, id);
                     stmt.setString(2, username);
                     stmt.setString(3, email);
                     stmt.setString(4, hash);
+                    stmt.setString(5, role);
                     stmt.executeUpdate();
                     stmt.close();
                 } finally {
                     releaseConnection(conn);
                 }
 
-                String response = "{\"status\":\"success\", \"id\":\"" + id + "\", \"username\":\"" + username + "\"}";
+                String response = "{\"status\":\"success\", \"id\":\"" + id + "\", \"username\":\"" + username + "\", \"role\":\"" + (username.equalsIgnoreCase("admin") ? "Admin" : "User") + "\"}";
                 t.getResponseHeaders().set("Content-Type", "application/json");
                 byte[] bytes = response.getBytes("UTF-8");
                 t.sendResponseHeaders(200, bytes.length);
@@ -352,7 +385,21 @@ public class Server {
                         }
 
                         if (matched) {
-                            response = "{\"status\":\"success\", \"id\":\"" + rs.getString("id") + "\", \"username\":\"" + rs.getString("username") + "\"}";
+                            String userId = rs.getString("id");
+                            String userRole = rs.getString("role");
+                            if (username.equalsIgnoreCase("admin") || (userRole != null && userRole.equalsIgnoreCase("admin"))) {
+                                userRole = "Admin";
+                                try (PreparedStatement updRole = conn.prepareStatement("UPDATE users SET role = 'Admin' WHERE id = ?")) {
+                                    updRole.setString(1, userId);
+                                    updRole.executeUpdate();
+                                } catch (Throwable ignored) {}
+                            }
+                            try (PreparedStatement updLogin = conn.prepareStatement("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?")) {
+                                updLogin.setString(1, userId);
+                                updLogin.executeUpdate();
+                            } catch (Throwable ignored) {}
+
+                            response = "{\"status\":\"success\", \"id\":\"" + userId + "\", \"username\":\"" + rs.getString("username") + "\", \"role\":\"" + (userRole != null ? userRole : "User") + "\"}";
                             isSuccess = true;
                         } else {
                             response = "{\"error\":\"Invalid username or password\"}";
