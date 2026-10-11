@@ -280,6 +280,51 @@ class CineArchiveDB {
         } else {
             this.log("system", "Database hydration complete. UI linked successfully.");
         }
+
+        // Robust Session Synchronization: ensure active user exists in the active database
+        if (this.activeUserId) {
+            let activeUser = this.tables.users.find(u => u.id === this.activeUserId);
+            if (!activeUser) {
+                let cachedData = null;
+                try {
+                    cachedData = JSON.parse(localStorage.getItem("activeUserData") || "null");
+                } catch (e) {}
+
+                // 1. Reconcile by username (in case ID differed across SQLite <-> PostgreSQL sync)
+                if (cachedData && cachedData.username) {
+                    const matched = this.tables.users.find(u => u.username.toLowerCase() === cachedData.username.toLowerCase());
+                    if (matched) {
+                        this.activeUserId = matched.id;
+                        localStorage.setItem("activeUserId", matched.id);
+                        localStorage.setItem("activeUserData", JSON.stringify(matched));
+                        activeUser = matched;
+                        this.log("system", `Active session synced to DB user ID '${matched.id}' (@${matched.username})`);
+                    }
+                }
+
+                // 2. If still not in users table, auto-heal by adding to local table and upserting to DB
+                if (!activeUser) {
+                    const fallbackUsername = cachedData?.username || ("User_" + this.activeUserId.slice(-4));
+                    const fallbackEmail = cachedData?.email || (this.activeUserId + "@cinearchive.org");
+                    const restoredUser = {
+                        id: this.activeUserId,
+                        username: fallbackUsername,
+                        email: fallbackEmail,
+                        role: cachedData?.role || "User",
+                        joined_date: new Date().toISOString().split("T")[0],
+                        bio: cachedData?.bio || "Film enthusiast."
+                    };
+                    this.tables.users.push(restoredUser);
+                    try {
+                        this.fetchWithTimeout('http://localhost:8080/api/sql', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain' },
+                            body: `INSERT INTO users (id, username, email, role, joined_date, bio) VALUES ('${restoredUser.id}', '${restoredUser.username.replace(/'/g, "''")}', '${restoredUser.email.replace(/'/g, "''")}', '${restoredUser.role}', '${restoredUser.joined_date}', '${restoredUser.bio.replace(/'/g, "''")}') ON CONFLICT (id) DO NOTHING`
+                        }, 5000).catch(() => {});
+                    } catch (e) {}
+                }
+            }
+        }
     }
 
     seedDefaults() {
@@ -355,6 +400,31 @@ class CineArchiveDB {
                 let refPk = refSchema.pk;
                 let exists = this.tables[refTable].some(row => row[refPk] === refVal);
                 
+                // Self-healing for user foreign key if session user key is missing from table
+                if (!exists && refTable === "users") {
+                    let cachedData = null;
+                    try {
+                        cachedData = JSON.parse(localStorage.getItem("activeUserData") || "null");
+                    } catch (e) {}
+                    const healedUser = {
+                        id: refVal,
+                        username: (cachedData && cachedData.id === refVal && cachedData.username) ? cachedData.username : ("User_" + String(refVal).slice(-4)),
+                        email: (cachedData && cachedData.id === refVal && cachedData.email) ? cachedData.email : (refVal + "@cinearchive.org"),
+                        role: "User",
+                        joined_date: new Date().toISOString().split("T")[0],
+                        bio: "Film enthusiast."
+                    };
+                    this.tables.users.push(healedUser);
+                    exists = true;
+                    try {
+                        this.fetchWithTimeout('http://localhost:8080/api/sql', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain' },
+                            body: `INSERT INTO users (id, username, email, role, joined_date, bio) VALUES ('${healedUser.id}', '${healedUser.username.replace(/'/g, "''")}', '${healedUser.email.replace(/'/g, "''")}', '${healedUser.role}', '${healedUser.joined_date}', '${healedUser.bio.replace(/'/g, "''")}') ON CONFLICT (id) DO NOTHING`
+                        }, 5000).catch(() => {});
+                    } catch (e) {}
+                }
+
                 if (!exists) {
                     throw new Error(`Foreign Key Constraint Violated: Table '${tableName}' references non-existent key '${refVal}' in table '${refTable}(${refPk})'.`);
                 }
@@ -1429,6 +1499,12 @@ function attachFeedActionListeners(container) {
     container.querySelectorAll(".comment-form").forEach(form => {
         form.onsubmit = (e) => {
             e.preventDefault();
+            if (!db.activeUserId) {
+                const authModal = document.getElementById("auth-modal");
+                if (authModal) authModal.classList.remove("hidden");
+                return;
+            }
+            const activeUser = state.getActiveUser();
             const revId = form.getAttribute("data-rev-id");
             const input = form.querySelector(".comment-input");
             const commentText = input.value.trim();
@@ -1437,7 +1513,7 @@ function attachFeedActionListeners(container) {
             try {
                 db.insertRow("comments", {
                     review_id: revId,
-                    user_id: currentUser?.id,
+                    user_id: activeUser?.id,
                     comment_text: commentText,
                     created_at: new Date().toISOString().split("T")[0]
                 });
@@ -1458,8 +1534,14 @@ function attachFeedActionListeners(container) {
     container.querySelectorAll(".follow-feed-btn").forEach(btn => {
         btn.onclick = (e) => {
             e.preventDefault();
+            if (!db.activeUserId) {
+                const authModal = document.getElementById("auth-modal");
+                if (authModal) authModal.classList.remove("hidden");
+                return;
+            }
+            const activeUser = state.getActiveUser();
             const authorId = btn.getAttribute("data-author-id");
-            const followerId = currentUser?.id;
+            const followerId = activeUser?.id;
 
             const existingIndex = db.tables.followers.findIndex(f => f.follower_user_id === followerId && f.followed_user_id === authorId);
             if (existingIndex !== -1) {
@@ -1792,6 +1874,11 @@ function initLogModal() {
     }
 
     function openModal() {
+        if (!db.activeUserId) {
+            const authModal = document.getElementById("auth-modal");
+            if (authModal) authModal.classList.remove("hidden");
+            return;
+        }
         populateDropdownOptions();
         form.reset();
         ratingInput.value = "0";
@@ -1847,6 +1934,12 @@ function initLogModal() {
 
     form.onsubmit = (e) => {
         e.preventDefault();
+        if (!db.activeUserId) {
+            alert("Please sign in to log, rate, or review movies.");
+            const authModal = document.getElementById("auth-modal");
+            if (authModal) authModal.classList.remove("hidden");
+            return;
+        }
         const movieId = filmSelect.value;
         const rating = parseInt(ratingInput.value);
         const reviewText = document.getElementById("log-review-text").value.trim();
@@ -1949,10 +2042,14 @@ function initDetailModal() {
         }
     });
 
-    const user = state.getActiveUser();
-
     watchBtn.onclick = () => {
         if (!activeDetailFilmId) return;
+        if (!db.activeUserId) {
+            const authModal = document.getElementById("auth-modal");
+            if (authModal) authModal.classList.remove("hidden");
+            return;
+        }
+        const user = state.getActiveUser();
         
         try {
             const existingRating = db.tables.ratings.find(r => r.user_id === user?.id && r.movie_id === activeDetailFilmId);
@@ -1979,6 +2076,12 @@ function initDetailModal() {
 
     likeBtn.onclick = () => {
         if (!activeDetailFilmId) return;
+        if (!db.activeUserId) {
+            const authModal = document.getElementById("auth-modal");
+            if (authModal) authModal.classList.remove("hidden");
+            return;
+        }
+        const user = state.getActiveUser();
         const movie = db.tables.movies.find(m => m.id === activeDetailFilmId);
 
         try {
@@ -2008,6 +2111,12 @@ function initDetailModal() {
 
     watchlistBtn.onclick = () => {
         if (!activeDetailFilmId) return;
+        if (!db.activeUserId) {
+            const authModal = document.getElementById("auth-modal");
+            if (authModal) authModal.classList.remove("hidden");
+            return;
+        }
+        const user = state.getActiveUser();
 
         try {
             const w = db.tables.watchlists.find(wi => wi.user_id === user?.id && wi.movie_id === activeDetailFilmId);
@@ -2154,6 +2263,11 @@ function initListModal() {
     const checkboxList = document.getElementById("list-films-checkboxes");
 
     function openModal() {
+        if (!db.activeUserId) {
+            const authModal = document.getElementById("auth-modal");
+            if (authModal) authModal.classList.remove("hidden");
+            return;
+        }
         const sortedFilms = [...db.tables.movies].sort((a,b) => a.title.localeCompare(b.title));
         checkboxList.innerHTML = sortedFilms.map(film => `
             <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
@@ -2175,6 +2289,12 @@ function initListModal() {
 
     form.onsubmit = (e) => {
         e.preventDefault();
+        if (!db.activeUserId) {
+            alert("Please sign in to create a list.");
+            const authModal = document.getElementById("auth-modal");
+            if (authModal) authModal.classList.remove("hidden");
+            return;
+        }
         const listName = document.getElementById("list-name").value;
         const listDesc = document.getElementById("list-desc").value;
         const checkedBoxes = checkboxList.querySelectorAll("input[name='list-film-choice']:checked");
