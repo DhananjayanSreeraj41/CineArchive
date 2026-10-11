@@ -1,3 +1,4 @@
+INSERT INTO users (id, username, email, role, joined_date, bio) VALUES ('u_admin', 'admin', 'admin@cinearchive.org', 'Admin', '2025-01-01', 'System Administrator & Operations');
 INSERT INTO users (id, username, email, role, joined_date, bio) VALUES ('u1', 'CinephileExplorer', 'dhananjayansreeraj41@gmail.com', 'User', '2026-01-10', 'Watching films, writing reviews, and curating collections. Letterboxd fanatic turned CinéArchive loyalist.');
 INSERT INTO users (id, username, email, role, joined_date, bio) VALUES ('u2', 'GhibliFanatic', 'ghibli@cinearchive.org', 'User', '2026-03-15', 'Spirited Away changed my life. Hand-drawn animation purist.');
 INSERT INTO users (id, username, email, role, joined_date, bio) VALUES ('u3', 'JazzDrummer99', 'drummer99@cinearchive.org', 'User', '2026-05-20', 'Not quite my tempo. Whiplash is the greatest movie ever made.');

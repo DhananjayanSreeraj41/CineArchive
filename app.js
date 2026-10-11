@@ -4,6 +4,7 @@
 
 // 1. COMPREHENSIVE SEED DATASET (Relational 3NF Model)
 const SEED_USERS = [
+    { id: "u_admin", username: "admin", email: "admin@cinearchive.org", role: "Admin", joined_date: "2025-01-01", bio: "System Administrator & Operations", last_login: "2026-10-11 16:20:00" },
     { id: "u1", username: "CinephileExplorer", email: "dhananjayansreeraj41@gmail.com", role: "User", joined_date: "2026-01-10", bio: "Watching films, writing reviews, and curating collections. Letterboxd fanatic turned CinéArchive loyalist." },
     { id: "u2", username: "GhibliFanatic", email: "ghibli@cinearchive.org", role: "User", joined_date: "2026-03-15", bio: "Spirited Away changed my life. Hand-drawn animation purist." },
     { id: "u3", username: "JazzDrummer99", email: "drummer99@cinearchive.org", role: "User", joined_date: "2026-05-20", bio: "Not quite my tempo. Whiplash is the greatest movie ever made." },
@@ -281,6 +282,13 @@ class CineArchiveDB {
             this.log("system", "Database hydration complete. UI linked successfully.");
         }
 
+        // Ensure any user named 'admin' has role 'Admin'
+        this.tables.users.forEach(u => {
+            if (u.username && u.username.toLowerCase() === "admin") {
+                u.role = "Admin";
+            }
+        });
+
         // Robust Session Synchronization: ensure active user exists in the active database
         if (this.activeUserId) {
             let activeUser = this.tables.users.find(u => u.id === this.activeUserId);
@@ -364,7 +372,7 @@ class CineArchiveDB {
     // Dynamic relational schema descriptors
     getSchemas() {
         return {
-            users: { pk: "id", cols: ["id", "username", "email", "role", "joined_date", "bio"] },
+            users: { pk: "id", cols: ["id", "username", "email", "role", "joined_date", "bio", "last_login"] },
             directors: { pk: "id", cols: ["id", "name", "birth_year", "bio"] },
             actors: { pk: "id", cols: ["id", "name", "birth_year", "bio"] },
             genres: { pk: "id", cols: ["id", "name"] },
@@ -1081,7 +1089,13 @@ const db = new CineArchiveDB();
 // 3. SPA STATE WRAPPER (Binds relational queries to UI)
 const state = {
     // Current active user object resolved from DB
-    getActiveUser: () => db.tables.users.find(u => u.id === db.activeUserId) || JSON.parse(localStorage.getItem("activeUserData") || "null") || { id: db.activeUserId, username: "User", bio: "" },
+    getActiveUser: () => {
+        let u = db.tables.users.find(u => u.id === db.activeUserId) || JSON.parse(localStorage.getItem("activeUserData") || "null") || { id: db.activeUserId, username: "User", bio: "" };
+        if (u && u.username && u.username.toLowerCase() === "admin") {
+            u.role = "Admin";
+        }
+        return u;
+    },
     
     // Getter list wrappers mapping joints
     getMovies: () => db.tables.movies,
@@ -1104,8 +1118,31 @@ function initApp() {
     const tabContents = document.querySelectorAll(".tab-content");
     const logoBtn = document.getElementById("nav-logo");
 
+    // Admin role access gating
+    function checkAdminAccess() {
+        const user = state.getActiveUser();
+        const isAdmin = user && (user.role === "Admin" || (user.username && user.username.toLowerCase() === "admin") || user.id === "u_admin");
+        const adminLink = document.getElementById("admin-nav-link");
+        if (adminLink) {
+            if (isAdmin) {
+                adminLink.classList.remove("hidden");
+                db.activeRole = "admin";
+                const roleSelect = document.getElementById("db-role-selector");
+                if (roleSelect) roleSelect.value = "admin";
+            } else {
+                adminLink.classList.add("hidden");
+            }
+        }
+        return isAdmin;
+    }
+
     // SPA View Router
     function switchTab(tabId) {
+        if (tabId === "admin" && !checkAdminAccess()) {
+            switchTab("home");
+            return;
+        }
+
         navItems.forEach(item => {
             if (item.getAttribute("data-tab") === tabId) {
                 item.classList.add("active");
@@ -1127,6 +1164,8 @@ function initApp() {
         renderTab(tabId);
         window.scrollTo({ top: 0, behavior: "smooth" });
     }
+
+    checkAdminAccess();
 
     navItems.forEach(item => {
         item.addEventListener("click", (e) => {
@@ -1403,6 +1442,8 @@ function renderReviewsFeed() {
             if (!film || !author) return "";
 
             const isUserReview = rev.user_id === currentUser?.id;
+            const isCurrentAdmin = currentUser && (currentUser.role === "Admin" || (currentUser.username && currentUser.username.toLowerCase() === "admin") || currentUser.id === "u_admin");
+            const canDeleteReview = isUserReview || isCurrentAdmin;
             
             // Check follow relation
             const isFollowingAuthor = db.tables.followers.some(f => f.follower_user_id === currentUser?.id && f.followed_user_id === author.id);
@@ -1411,6 +1452,10 @@ function renderReviewsFeed() {
                     ${isFollowingAuthor ? "Unfollow" : "Follow"}
                 </button>
             `;
+
+            // Author role badge
+            const isAuthorAdmin = (author.role || "").toLowerCase() === "admin" || (author.username || "").toLowerCase() === "admin";
+            const authorRoleBadge = isAuthorAdmin ? `<span class="badge-role badge-role-admin" style="font-size: 11px; padding: 2px 8px;"><i class="fa-solid fa-shield-halved"></i> Admin</span>` : "";
 
             // Pull comment count for this review
             const comms = db.tables.comments.filter(c => c.review_id === rev.id);
@@ -1425,6 +1470,7 @@ function renderReviewsFeed() {
                                 <div class="review-user-info" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                     <span class="review-user-avatar"><i class="fa-solid fa-user-astronaut"></i></span>
                                     <span class="review-username" style="color: var(--color-blue); font-weight: 600;">@${author.username}</span>
+                                    ${authorRoleBadge}
                                     ${followBtnHtml}
                                     <span class="review-date">on ${formatDate(rev.created_at)}</span>
                                 </div>
@@ -1442,7 +1488,7 @@ function renderReviewsFeed() {
                             <button class="comments-toggle-btn" data-rev-id="${rev.id}">
                                 <i class="fa-regular fa-comment"></i> Comments (${comms.length})
                             </button>
-                            ${isUserReview ? `<button class="review-delete-btn" data-rev-id="${rev.id}"><i class="fa-solid fa-trash-can"></i> Delete</button>` : ""}
+                            ${canDeleteReview ? `<button class="review-delete-btn" data-rev-id="${rev.id}"><i class="fa-solid ${!isUserReview ? 'fa-shield-halved' : 'fa-trash-can'}"></i> ${!isUserReview ? 'Moderate' : 'Delete'}</button>` : ""}
                         </div>
 
                         <!-- Nested Comment Section (Hidden by default) -->
@@ -1614,6 +1660,14 @@ function renderProfileView() {
     const user = state.getActiveUser();
     const usernameEl = document.getElementById("profile-username");
     if (usernameEl) usernameEl.textContent = user?.username || "User";
+
+    // Set role badge
+    const roleBadgeEl = document.getElementById("profile-role-badge");
+    const isAdmin = user && (user.role === "Admin" || (user.username && user.username.toLowerCase() === "admin") || user.id === "u_admin");
+    if (roleBadgeEl) {
+        if (isAdmin) roleBadgeEl.classList.remove("hidden");
+        else roleBadgeEl.classList.add("hidden");
+    }
     
     // Set bio
     const bioText = document.querySelector(".profile-bio");
@@ -2488,6 +2542,14 @@ function initAdminConsole() {
         }
     };
 
+    // Admin user search input listener
+    const userSearchInput = document.getElementById("admin-user-search-input");
+    if (userSearchInput) {
+        userSearchInput.oninput = (e) => {
+            renderAdminUsersTable(e.target.value);
+        };
+    }
+
     // Execute Sandbox SQL
     runSqlBtn.onclick = () => {
         const sqlQuery = sqlTextarea.value.trim();
@@ -2678,9 +2740,119 @@ function renderAdminDashboard() {
     const totalRecsEl = document.getElementById("db-total-records");
     if (totalRecsEl) totalRecsEl.textContent = totalCount.toLocaleString();
 
+    // Populate Admin KPI Metrics
+    const totalUsersEl = document.getElementById("admin-stat-total-users");
+    const loggedInUsersEl = document.getElementById("admin-stat-logged-in-users");
+    const adminUsersEl = document.getElementById("admin-stat-admin-users");
+    const totalReviewsEl = document.getElementById("admin-stat-total-reviews");
+    const totalRatingsEl = document.getElementById("admin-stat-total-ratings");
+
+    if (totalUsersEl) totalUsersEl.textContent = db.tables.users.length;
+    if (loggedInUsersEl) {
+        const loggedInCount = db.tables.users.filter(u => u.last_login || u.id === db.activeUserId).length;
+        loggedInUsersEl.textContent = loggedInCount;
+    }
+    if (adminUsersEl) {
+        const adminCount = db.tables.users.filter(u => (u.role || "").toLowerCase() === "admin").length;
+        adminUsersEl.textContent = adminCount;
+    }
+    if (totalReviewsEl) totalReviewsEl.textContent = db.tables.reviews.length;
+    if (totalRatingsEl) totalRatingsEl.textContent = db.tables.ratings.length;
+
+    // Render User Directory Table
+    const searchVal = document.getElementById("admin-user-search-input")?.value || "";
+    renderAdminUsersTable(searchVal);
+
     // Default load table explorer on current table selection
-    const tbl = document.getElementById("db-table-select").value || "movies";
+    const tbl = document.getElementById("db-table-select")?.value || "movies";
     renderAdminTableBrowser(tbl);
+}
+
+function renderAdminUsersTable(searchFilter = "") {
+    const tbody = document.getElementById("admin-users-table-tbody");
+    if (!tbody) return;
+
+    let users = [...db.tables.users];
+    const q = (searchFilter || "").toLowerCase().trim();
+    if (q) {
+        users = users.filter(u => {
+            const uname = (u.username || "").toLowerCase();
+            const email = (u.email || "").toLowerCase();
+            const role = (u.role || "").toLowerCase();
+            const bio = (u.bio || "").toLowerCase();
+            return uname.includes(q) || email.includes(q) || role.includes(q) || bio.includes(q);
+        });
+    }
+
+    // Sort order:
+    // 1. Current active user on top
+    // 2. Users with last_login (most recent first)
+    // 3. Other users by joined_date desc
+    users.sort((a, b) => {
+        if (a.id === db.activeUserId) return -1;
+        if (b.id === db.activeUserId) return 1;
+        if (a.last_login && b.last_login) {
+            return new Date(b.last_login) - new Date(a.last_login);
+        }
+        if (a.last_login) return -1;
+        if (b.last_login) return 1;
+        return (b.joined_date || "").localeCompare(a.joined_date || "");
+    });
+
+    if (users.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-color); font-style: italic;">No users found matching "${searchFilter}".</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = users.map(u => {
+        const isCurrent = u.id === db.activeUserId;
+        const hasLoggedIn = !!u.last_login;
+        const isAdmin = (u.role || "").toLowerCase() === "admin";
+        
+        // Session Status badge
+        let statusBadge = "";
+        if (isCurrent) {
+            statusBadge = `<span class="status-badge status-badge-online"><span class="status-dot online"></span> Online Now</span>`;
+        } else if (hasLoggedIn) {
+            statusBadge = `<span class="status-badge status-badge-active"><span class="status-dot active"></span> Logged In</span>`;
+        } else {
+            statusBadge = `<span class="status-badge status-badge-offline"><span class="status-dot offline"></span> Pre-seeded / Offline</span>`;
+        }
+
+        // Role badge
+        const roleBadge = `<span class="badge-role ${isAdmin ? 'badge-role-admin' : 'badge-role-user'}"><i class="fa-solid ${isAdmin ? 'fa-shield-halved' : 'fa-user'}"></i> ${u.role || 'User'}</span>`;
+
+        // Activity timestamp
+        const lastLoginText = u.last_login ? formatDateTime(u.last_login) : `<span style="color: var(--text-color); font-style: italic;">Never</span>`;
+
+        // Review & Rating counts
+        const reviewCount = db.tables.reviews.filter(r => r.user_id === u.id).length;
+        const ratingCount = db.tables.ratings.filter(r => r.user_id === u.id).length;
+
+        // Initials
+        const initials = (u.username || "U").substring(0, 2).toUpperCase();
+
+        return `
+            <tr class="record-row">
+                <td>
+                    <div class="user-table-cell-info">
+                        <div class="user-avatar-circle">${initials}</div>
+                        <div class="user-cell-meta">
+                            <strong class="user-cell-name">@${u.username}</strong>
+                            <span class="user-cell-id">${u.id}</span>
+                        </div>
+                    </div>
+                </td>
+                <td style="color: var(--text-highlight);">${u.email || "—"}</td>
+                <td>${roleBadge}</td>
+                <td>${statusBadge}</td>
+                <td><strong>${lastLoginText}</strong></td>
+                <td><span style="font-weight: 600; color: var(--color-blue);">${reviewCount}</span></td>
+                <td><span style="font-weight: 600; color: var(--star-color);">${ratingCount}</span></td>
+                <td>${formatDate(u.joined_date) || "—"}</td>
+            </tr>
+        `;
+    }).join("");
 }
 
 function renderAdminTableBrowser(table) {
@@ -2824,6 +2996,23 @@ function formatDate(dateStr) {
     return dateObj.toLocaleDateString('en-US', options);
 }
 
+function formatDateTime(dateStr) {
+    if (!dateStr) return "";
+    try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        return d.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (e) {
+        return dateStr;
+    }
+}
+
 // ==========================================
 // AUTHENTICATION & USER PROFILES
 // ==========================================
@@ -2909,7 +3098,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 errorDiv.textContent = data.error;
             } else if (data.status === "success") {
                 localStorage.setItem("activeUserId", data.id);
-                localStorage.setItem("activeUserData", JSON.stringify({ id: data.id, username: data.username || payload.username, bio: "New user ready to explore cinema." }));
+                localStorage.setItem("activeUserData", JSON.stringify({ 
+                    id: data.id, 
+                    username: data.username || payload.username, 
+                    role: data.role || (payload.username === "admin" ? "Admin" : "User"),
+                    bio: "New user ready to explore cinema." 
+                }));
                 db.activeUserId = data.id;
                 
                 // Fetch the new user data if not in db.tables.users

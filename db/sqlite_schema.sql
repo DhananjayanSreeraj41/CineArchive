@@ -5,7 +5,8 @@ CREATE TABLE users (
     role VARCHAR(20) DEFAULT 'User',
     joined_date DATE,
     bio TEXT,
-    password_hash VARCHAR(255)
+    password_hash VARCHAR(255),
+    last_login TEXT
 );
 
 CREATE TABLE directors (

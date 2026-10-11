@@ -36,6 +36,7 @@
                 <a href="#" class="nav-item" data-tab="reviews"><i class="fa-solid fa-quote-left"></i> Reviews</a>
                 <a href="#" class="nav-item" data-tab="lists"><i class="fa-solid fa-list-ul"></i> Lists</a>
                 <a href="#" class="nav-item" data-tab="profile" id="profile-nav-link"><i class="fa-solid fa-user"></i> Profile</a>
+                <a href="#" class="nav-item hidden" data-tab="admin" id="admin-nav-link"><i class="fa-solid fa-shield-halved"></i> Admin</a>
             </nav>
 
             <!-- Search and Actions -->
@@ -260,7 +261,10 @@
                     <i class="fa-solid fa-user-astronaut"></i>
                 </div>
                 <div class="profile-info">
-                    <h1 id="profile-username">CinephileExplorer</h1>
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <h1 id="profile-username" style="margin-bottom: 0;">CinephileExplorer</h1>
+                        <span id="profile-role-badge" class="badge-role badge-role-admin hidden"><i class="fa-solid fa-shield-halved"></i> Administrator</span>
+                    </div>
                     <p class="profile-bio">Welcome to my movie diary. Watching films, writing reviews, and curating collections.</p>
                 </div>
                 <div class="profile-counters">
@@ -420,7 +424,8 @@
                 <div class="admin-layout">
                     <!-- Sidebar Menu -->
                     <div class="admin-sidebar">
-                        <button class="admin-menu-btn active" data-admin-panel="tables"><i class="fa-solid fa-table-list"></i> Table Explorer</button>
+                        <button class="admin-menu-btn active" data-admin-panel="dashboard"><i class="fa-solid fa-chart-line"></i> User & Activity Dashboard</button>
+                        <button class="admin-menu-btn" data-admin-panel="tables"><i class="fa-solid fa-table-list"></i> Table Explorer</button>
                         <button class="admin-menu-btn" data-admin-panel="sql"><i class="fa-solid fa-terminal"></i> SQL Console</button>
                         <button class="admin-menu-btn" data-admin-panel="procedures"><i class="fa-solid fa-server"></i> Procedures & Views</button>
                         <button class="admin-menu-btn" data-admin-panel="logs"><i class="fa-solid fa-rectangle-list"></i> DB Engine Logs <span class="badge" id="log-count-badge">0</span></button>
@@ -428,8 +433,65 @@
 
                     <!-- Panel Display Area -->
                     <div class="admin-panel-content">
+                        <!-- User & Activity Dashboard -->
+                        <div class="admin-panel-section" id="admin-panel-dashboard">
+                            <div class="panel-section-header">
+                                <div>
+                                    <h3>User Management & Session Activity</h3>
+                                    <p class="section-desc" style="margin-top: 4px; font-size: 13px;">Live audit of all registered and logged-in users, roles, and engagement activity across the system.</p>
+                                </div>
+                                <div class="admin-user-search-wrapper">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                    <input type="text" id="admin-user-search-input" placeholder="Search by username, email, or role...">
+                                </div>
+                            </div>
+
+                            <div class="admin-user-metrics-bar">
+                                <div class="admin-metric-pill">
+                                    <span class="metric-pill-label">Total Users</span>
+                                    <span class="metric-pill-val" id="admin-stat-total-users">0</span>
+                                </div>
+                                <div class="admin-metric-pill">
+                                    <span class="metric-pill-label">Active / Logged In</span>
+                                    <span class="metric-pill-val text-success" id="admin-stat-logged-in-users">0</span>
+                                </div>
+                                <div class="admin-metric-pill">
+                                    <span class="metric-pill-label">Administrators</span>
+                                    <span class="metric-pill-val text-warning" id="admin-stat-admin-users">0</span>
+                                </div>
+                                <div class="admin-metric-pill">
+                                    <span class="metric-pill-label">Reviews Written</span>
+                                    <span class="metric-pill-val" id="admin-stat-total-reviews">0</span>
+                                </div>
+                                <div class="admin-metric-pill">
+                                    <span class="metric-pill-label">Ratings Logged</span>
+                                    <span class="metric-pill-val" id="admin-stat-total-ratings">0</span>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive db-table-view-wrapper" style="margin-top: 20px;">
+                                <table class="diary-table db-data-table admin-users-table">
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Email Address</th>
+                                            <th>System Role</th>
+                                            <th>Session Status</th>
+                                            <th>Last Login / Activity</th>
+                                            <th>Reviews</th>
+                                            <th>Ratings</th>
+                                            <th>Member Since</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-users-table-tbody">
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
                         <!-- Table Explorer -->
-                        <div class="admin-panel-section" id="admin-panel-tables">
+                        <div class="admin-panel-section hidden" id="admin-panel-tables">
                             <div class="panel-section-header">
                                 <h3>Interactive Table Browser</h3>
                                 <div class="table-selector-row">
