@@ -1085,6 +1085,7 @@ class CineArchiveDB {
 
 // Instantiate database system globally
 const db = new CineArchiveDB();
+window.db = db;
 
 // 3. SPA STATE WRAPPER (Binds relational queries to UI)
 const state = {
@@ -1144,7 +1145,7 @@ function initApp() {
         }
 
         navItems.forEach(item => {
-            if (item.getAttribute("data-tab") === tabId) {
+            if (item.getAttribute("data-tab") === tabId || (tabId === "list-detail" && item.getAttribute("data-tab") === "lists")) {
                 item.classList.add("active");
             } else {
                 item.classList.remove("active");
@@ -1165,6 +1166,8 @@ function initApp() {
         window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
+    window.switchTab = switchTab;
+
     checkAdminAccess();
 
     navItems.forEach(item => {
@@ -1175,6 +1178,14 @@ function initApp() {
     });
 
     document.body.addEventListener("click", (e) => {
+        const listTrigger = e.target.closest(".list-detail-trigger");
+        if (listTrigger) {
+            e.preventDefault();
+            const listId = listTrigger.getAttribute("data-list-id");
+            if (listId) openListDetail(listId);
+            return;
+        }
+
         const redirectBtn = e.target.closest(".nav-redirect-btn");
         if (redirectBtn) {
             e.preventDefault();
@@ -1233,6 +1244,9 @@ function renderTab(tabId) {
             break;
         case "admin":
             renderAdminDashboard();
+            break;
+        case "list-detail":
+            renderListDetail();
             break;
     }
 }
@@ -1460,6 +1474,18 @@ function renderReviewsFeed() {
             // Pull comment count for this review
             const comms = db.tables.comments.filter(c => c.review_id === rev.id);
 
+            // Active user review liked state
+            const userLikedKey = `cine_liked_reviews_${currentUser?.id || "guest"}`;
+            let userLikedReviews = [];
+            try {
+                userLikedReviews = JSON.parse(localStorage.getItem(userLikedKey) || "[]");
+            } catch (e) {
+                userLikedReviews = [];
+            }
+            const isRevLiked = userLikedReviews.includes(rev.id);
+            const likesCount = Number(rev.likes_count || 0);
+            const heartIcon = isRevLiked ? "fa-solid fa-heart text-danger" : "fa-regular fa-heart";
+
             return `
                 <div class="review-card" data-rev-id="${rev.id}">
                     <img class="review-card-poster film-detail-trigger" src="${film.poster}" alt="${film.title}" data-id="${film.id}">
@@ -1482,8 +1508,8 @@ function renderReviewsFeed() {
                         <p class="review-card-text">${rev.review_text}</p>
                         
                         <div class="review-card-footer" style="display: flex; gap: 12px; align-items: center; margin-top: 10px;">
-                            <button class="like-button-action" style="background: transparent; color: var(--text-color); cursor: default;">
-                                <i class="fa-solid fa-heart text-danger"></i> <span>${rev.likes_count} Likes</span>
+                            <button class="like-button-action ${isRevLiked ? 'liked' : ''}" data-rev-id="${rev.id}" style="background: transparent;" title="${isRevLiked ? 'Unlike review' : 'Like review'}">
+                                <i class="${heartIcon}"></i> <span>${likesCount} ${likesCount === 1 ? 'Like' : 'Likes'}</span>
                             </button>
                             <button class="comments-toggle-btn" data-rev-id="${rev.id}">
                                 <i class="fa-regular fa-comment"></i> Comments (${comms.length})
@@ -1525,6 +1551,84 @@ function renderReviewsFeed() {
 
 function attachFeedActionListeners(container) {
     const currentUser = state.getActiveUser();
+
+    // Review like button clicks
+    container.querySelectorAll(".like-button-action").forEach(btn => {
+        btn.onclick = (e) => {
+            e.preventDefault();
+            if (!db.activeUserId) {
+                const authModal = document.getElementById("auth-modal");
+                if (authModal) authModal.classList.remove("hidden");
+                return;
+            }
+
+            const activeUser = state.getActiveUser();
+            const revId = btn.getAttribute("data-rev-id");
+            if (!revId) return;
+
+            const rev = db.tables.reviews.find(r => r.id === revId);
+            if (!rev) return;
+
+            const userLikedKey = `cine_liked_reviews_${activeUser.id}`;
+            let userLikedReviews = [];
+            try {
+                userLikedReviews = JSON.parse(localStorage.getItem(userLikedKey) || "[]");
+            } catch (err) {
+                userLikedReviews = [];
+            }
+
+            const isAlreadyLiked = userLikedReviews.includes(revId);
+            let newLikesCount = Number(rev.likes_count || 0);
+
+            if (isAlreadyLiked) {
+                userLikedReviews = userLikedReviews.filter(id => id !== revId);
+                newLikesCount = Math.max(0, newLikesCount - 1);
+            } else {
+                userLikedReviews.push(revId);
+                newLikesCount = newLikesCount + 1;
+
+                if (rev.user_id !== activeUser.id) {
+                    try {
+                        const film = db.tables.movies.find(m => m.id === rev.movie_id);
+                        const filmTitle = film ? film.title : "film";
+                        db.insertRow("notifications", {
+                            user_id: rev.user_id,
+                            message: `@${activeUser.username} liked your review of ${filmTitle}.`,
+                            is_read: false,
+                            created_at: new Date().toISOString().split("T")[0]
+                        });
+                    } catch (e) {}
+                }
+            }
+
+            localStorage.setItem(userLikedKey, JSON.stringify(userLikedReviews));
+            rev.likes_count = newLikesCount;
+
+            try {
+                db.updateRow("reviews", rev.id, { likes_count: newLikesCount });
+            } catch (err) {
+                db.save();
+                db.fetchWithTimeout('http://localhost:8080/api/sql', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: `UPDATE reviews SET likes_count = ${newLikesCount} WHERE id = '${String(rev.id).replace(/'/g, "''")}'`
+                }, 5000).catch(() => {});
+            }
+
+            const isNowLiked = !isAlreadyLiked;
+            if (isNowLiked) {
+                btn.classList.add("liked");
+                btn.innerHTML = `<i class="fa-solid fa-heart text-danger"></i> <span>${newLikesCount} ${newLikesCount === 1 ? 'Like' : 'Likes'}</span>`;
+                btn.setAttribute("title", "Unlike review");
+            } else {
+                btn.classList.remove("liked");
+                btn.innerHTML = `<i class="fa-regular fa-heart"></i> <span>${newLikesCount} ${newLikesCount === 1 ? 'Like' : 'Likes'}</span>`;
+                btn.setAttribute("title", "Like review");
+            }
+
+            db.log("info", `Review '${rev.id}' ${isNowLiked ? 'liked' : 'unliked'} by @${activeUser.username} (Total likes: ${newLikesCount})`);
+        };
+    });
 
     // Comment panel toggles
     container.querySelectorAll(".comments-toggle-btn").forEach(btn => {
@@ -1653,6 +1757,55 @@ function renderListsCatalog() {
     if (!catalog) return;
 
     catalog.innerHTML = db.tables.lists.map(list => createListCardHtml(list)).join("");
+}
+
+let activeListId = null;
+
+function openListDetail(listId) {
+    const list = db.tables.lists.find(l => l.id === listId);
+    if (!list) return;
+
+    activeListId = listId;
+    if (typeof window.switchTab === "function") {
+        window.switchTab("list-detail");
+    }
+}
+
+function renderListDetail() {
+    if (!activeListId) return;
+    const list = db.tables.lists.find(l => l.id === activeListId);
+    if (!list) return;
+
+    const colList = db.tables.collections.filter(c => c.list_id === list.id);
+    const films = db.tables.movies.filter(m => colList.some(cl => cl.movie_id === m.id));
+    const authorUser = db.tables.users.find(u => u.id === list.user_id);
+    const authorName = authorUser ? authorUser.username : "anonymous";
+
+    const titleEl = document.getElementById("list-detail-name");
+    const descEl = document.getElementById("list-detail-description");
+    const metaEl = document.getElementById("list-detail-meta");
+    const countBadge = document.getElementById("list-detail-count-badge");
+    const gridEl = document.getElementById("list-detail-films-grid");
+
+    if (titleEl) titleEl.textContent = list.name;
+    if (descEl) descEl.textContent = list.description || "No description provided for this collection.";
+    if (countBadge) countBadge.textContent = `${films.length} ${films.length === 1 ? 'film' : 'films'}`;
+
+    if (metaEl) {
+        metaEl.innerHTML = `
+            <span><i class="fa-solid fa-user-astronaut"></i> Curated by <strong style="color: var(--color-blue);">@${authorName}</strong></span>
+            <span><i class="fa-solid fa-film"></i> ${films.length} ${films.length === 1 ? 'film' : 'films'}</span>
+            <span><i class="fa-regular fa-calendar"></i> ${formatDate(list.created_at)}</span>
+        `;
+    }
+
+    if (gridEl) {
+        if (films.length === 0) {
+            gridEl.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-color); padding: 40px; font-size: 15px; font-style: italic;">No movies have been added to this list yet.</div>`;
+        } else {
+            gridEl.innerHTML = films.map(f => createFilmCardHtml(f)).join("");
+        }
+    }
 }
 
 // 9. PROFILE VIEW
@@ -2961,7 +3114,7 @@ function createListCardHtml(list) {
     }).join("");
 
     return `
-        <div class="list-card nav-redirect-btn" data-target="profile" onclick="sessionStorage.setItem('activeProfileSec','mylists')">
+        <div class="list-card list-detail-trigger" data-list-id="${list.id}" style="cursor: pointer;">
             <div class="list-card-details">
                 <h3>${list.name}</h3>
                 <p class="list-card-desc">${list.description}</p>
