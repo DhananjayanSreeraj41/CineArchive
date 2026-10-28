@@ -254,6 +254,34 @@
             </div>
         </section>
 
+        <!-- ================= LIST DETAIL TAB ================= -->
+        <section id="list-detail-tab" class="tab-content hidden">
+            <div class="list-detail-nav-bar">
+                <button class="btn btn-secondary nav-redirect-btn" data-target="home" id="list-back-home-btn">
+                    <i class="fa-solid fa-house"></i> Back to Home
+                </button>
+                <button class="btn btn-secondary nav-redirect-btn" data-target="lists" id="list-back-lists-btn">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Lists
+                </button>
+            </div>
+
+            <div class="list-detail-header-card">
+                <span class="badge" style="background: var(--color-orange); color: var(--text-white); font-weight: 600; text-transform: uppercase; font-size: 11px; padding: 4px 10px; border-radius: 4px; display: inline-block; margin-bottom: 12px;">Curated Collection</span>
+                <h1 id="list-detail-name">List Name</h1>
+                <p id="list-detail-description" class="section-desc"></p>
+                <div id="list-detail-meta" style="color: var(--text-color); font-size: 13px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; border-top: 1px solid var(--border-color); padding-top: 14px; margin-top: 16px;"></div>
+            </div>
+
+            <div class="section-header" style="margin-bottom: 18px;">
+                <h2>Films in this List</h2>
+                <span id="list-detail-count-badge" class="badge" style="font-size: 13px;">0 films</span>
+            </div>
+
+            <div class="films-grid-layout" id="list-detail-films-grid">
+                <!-- Populated by JavaScript -->
+            </div>
+        </section>
+
         <!-- ================= PROFILE TAB ================= -->
         <section id="profile-tab" class="tab-content hidden">
             <div class="profile-banner">
